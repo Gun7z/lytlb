@@ -2073,9 +2073,17 @@ var CLOUD = { client: null, ready: false, posts: [], me: null, lastError: '' };
 
 function isCloud() { return !!CLOUD.ready; }
 
+/* 云端兜底配置：双击本地文件时浏览器读不到 content.json，用这份顶上（anon key 本来就是公开的） */
+var CLOUD_FALLBACK = {
+  url: 'https://oaagclluxvxbfzqbkepl.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hYWdjbGx1eHZ4YmZ6cWJrZXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3NjM0OTEsImV4cCI6MjExMDMzOTQ5MX0.5ezhm36GfRzxqKNOLxitjlQtDe5Id0m_PYFCHu0SI6c'
+};
+
 function cloudCfg() {
   var c = (SITE && SITE.cloud) || {};
-  return { url: String(c.url || '').trim(), key: String(c.anonKey || '').trim() };
+  var url = String(c.url || '').trim(), key = String(c.anonKey || '').trim();
+  if (!url || !key) { url = CLOUD_FALLBACK.url; key = CLOUD_FALLBACK.anonKey; }
+  return { url: url, key: key };
 }
 
 function cloudErr(r) { return (r && r.error && r.error.message) ? r.error.message : ''; }
