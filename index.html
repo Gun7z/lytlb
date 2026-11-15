@@ -92,6 +92,78 @@ header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); posit
 .staff-info p { line-height: 1.5; }
 .staff-id { font-weight: bold; color: var(--primary); }
 
+/* 用户中心 */
+.status-pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 12px; line-height: 1.9; white-space: nowrap; }
+.is-online { background: #e7f6ec; color: #1a7f45; }
+.is-offline { background: #f0f2f5; color: #8a919c; }
+.user-now { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px; background: var(--square-bg); border-radius: 10px; margin-bottom: 18px; }
+.user-now-avatar { width: 56px; height: 56px; border-radius: 50%; background: #d8dce3; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-muted); flex-shrink: 0; }
+.user-now-info { min-width: 0; flex: 1; }
+.user-now-label { font-size: 12px; color: var(--text-muted); }
+.user-now-info h3 { font-size: 1.1rem; line-height: 1.5; }
+.user-now-tip { font-size: 13px; color: var(--text-muted); }
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stat-box { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.stat-num { font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
+.stat-num.online-num { color: #1a7f45; }
+.stat-label { font-size: 12px; color: var(--text-muted); }
+.scope-tip { font-size: 12.5px; color: var(--text-muted); background: #fffdf5; border: 1px solid #f0e4c3; border-radius: 8px; padding: 10px 12px; }
+.user-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.user-table th, .user-table td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--border); word-break: break-all; }
+.user-table th { background: #f5f8ff; color: var(--text-muted); font-weight: 500; font-size: 13px; }
+.cell-name { font-weight: 600; }
+.row-you { font-size: 11px; color: var(--primary); background: var(--primary-light); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+.empty-row { text-align: center; color: var(--text-muted); }
+.table-tip { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* 服主管理台 */
+.owner-badge { background: #fff4e5; color: #a05a00; border: 1px solid #f0cfa0; border-radius: 999px; font-size: 12px; padding: 1px 9px; }
+.admin-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font-size: 14px; font-family: inherit; line-height: 1.7; background: var(--white); color: var(--text); }
+.admin-input:focus { outline: none; border-color: var(--primary); }
+.admin-row { margin-bottom: 14px; }
+.admin-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.admin-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.btn-primary { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+.btn-primary:hover { background: #4577d6; }
+.btn-ghost { background: var(--white); color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.btn-danger { background: var(--white); color: #c0392b; border: 1px solid #e8beb8; border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+.btn-danger:hover { background: #fdf1ef; }
+.admin-hint { font-size: 12.5px; color: #1a7f45; }
+.admin-hint.warn { color: #c0392b; }
+
+/* 各页发布与评论 */
+.post-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.post-card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; background: var(--white); }
+.post-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.post-author { font-weight: 600; font-size: 14px; }
+.post-pill { background: var(--primary-light); color: var(--primary); border-radius: 999px; font-size: 12px; padding: 1px 9px; }
+.post-time { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.post-text { font-size: 14px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+.post-image { display: block; margin-top: 12px; width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; background: #f2f5fa; }
+.post-empty { color: var(--text-muted); font-size: 14px; text-align: center; padding: 24px 0; }
+.post-pos { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 999px; font-size: 12px; padding: 0 9px; }
+.feed-count { font-size: 12px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; margin-left: 8px; font-weight: 400; vertical-align: middle; }
+.feed-tip { font-size: 13px; color: var(--text-muted); }
+
+/* 评论 */
+.cmt-wrap { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.cmt-item { padding: 7px 0; border-bottom: 1px dashed #f0f3f8; }
+.cmt-item:last-child { border-bottom: none; }
+.cmt-line { display: flex; align-items: center; gap: 8px; }
+.cmt-name { font-size: 13px; font-weight: 600; color: var(--primary); }
+.cmt-meta { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.cmt-text { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; margin-top: 2px; }
+.cmt-empty { font-size: 12.5px; color: var(--text-muted); padding: 4px 0; }
+.cmt-form { display: flex; gap: 8px; margin-top: 10px; }
+.cmt-input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--white); }
+.cmt-input:focus { outline: none; border-color: var(--primary); }
+.cmt-btn { padding: 8px 14px; font-size: 13px; border-radius: 8px; white-space: nowrap; }
+.cmt-tip { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; }
+.img-preview { margin-top: 10px; max-width: 100%; max-height: 220px; border-radius: 8px; display: none; }
+.img-note { font-size: 12.5px; color: var(--text-muted); }
+
 /* 社交 */
 .social-row { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
 .social-row a { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; transition: 0.25s ease; }
@@ -143,10 +215,13 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
       <a href="#gov" data-page="gov" class="nav-link">政务</a>
       <a href="#territory" data-page="territory" class="nav-link">领土</a>
       <a href="#officials" data-page="officials" class="nav-link">官员</a>
+      <a href="#users" data-page="users" class="nav-link">用户</a>
+      <a href="#admin" data-page="admin" class="nav-link" id="navAdmin" style="display:none">管理</a>
+      <a href="#post" data-page="post" class="nav-link" id="navPost" style="display:none">发布</a>
       <a href="#buildings" data-page="buildings" class="nav-link">建筑</a>
       <a href="#history" data-page="history" class="nav-link">历史</a>
       <a href="#relics" data-page="relics" class="nav-link">文物</a>
-      <a href="#religion" data-page="religion" class="nav-link">宗教</a>
+      <a href="#religion" data-page="religion" class="nav-link">龙心教</a>
       <a href="#other" data-page="other" class="nav-link">其他</a>
     </nav>
     <div class="auth-area">
@@ -157,6 +232,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
       <div class="user-area-logged" id="auth-after">
         <div class="avatar-placeholder" id="navAvatar">用户</div>
         <span id="navUserName"></span>
+        <span class="owner-badge" id="ownerBadge" style="display:none">服主</span>
         <button class="login-btn" id="logoutBtn" type="button">退出</button>
       </div>
     </div>
@@ -549,12 +625,12 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
     </div>
   </div>
 
-  <!-- ===== 视图：宗教 ===== -->
+  <!-- ===== 视图：龙之心语教 ===== -->
   <div class="page-block" data-id="religion">
     <div class="section">
-      <h2>联邦宗教文化体系</h2>
-      <p>宗教为洛亚提自由联邦官方文化组成部分，属于独立文化体系，不受行政议会管辖，保持自由、包容、和谐的信仰氛围。联邦尊重多元信仰、文化传承、精神建设。</p>
-      <p style="margin-top:12px;">宗教板块负责联邦精神文明建设、传统习俗传承、信仰文化活动、神圣区域维护、文化仪式统筹。</p>
+      <h2>龙之心语教</h2>
+      <p>龙之心语教为洛亚提自由联邦官方宗教，属独立文化体系，不受行政议会管辖，保持自由、包容、和谐的信仰氛围。联邦尊重多元信仰、文化传承与精神建设。</p>
+      <p style="margin-top:12px;">龙之心语教负责联邦精神文明建设、传统习俗传承、信仰文化活动、神圣区域维护与文化仪式统筹。</p>
     </div>
   </div>
 
@@ -563,6 +639,187 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
     <div class="section">
       <h2>其他公示与补充</h2>
       <p>包含未分类公告、资源存档、规则补充、版本更新记录、公共说明、职位变动公示入口。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：用户 ===== -->
+  <div class="page-block" data-id="users">
+    <div class="section">
+      <h2>用户中心（本机账号）</h2>
+      <div class="user-now">
+        <div class="user-now-avatar" id="userNowAvatar">访</div>
+        <div class="user-now-info">
+          <p class="user-now-label">当前身份</p>
+          <h3 id="userNowName">未登录</h3>
+          <p class="user-now-tip" id="userNowTip">尚未登录，可在右上角登录或注册。</p>
+        </div>
+        <span class="status-pill is-offline" id="userNowBadge">离线</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><p class="stat-num" id="userTotal">0</p><p class="stat-label">本机注册账号</p></div>
+        <div class="stat-box"><p class="stat-num online-num" id="userOnline">0</p><p class="stat-label">在线</p></div>
+        <div class="stat-box"><p class="stat-num" id="userOffline">0</p><p class="stat-label">离线</p></div>
+      </div>
+      <p class="scope-tip">判定规则：当前浏览器里处于登录状态的账号记为「在线」，其余已注册账号记为「离线」。账号数据只存在本机浏览器，换设备或换浏览器不会同步。</p>
+    </div>
+    <div class="section">
+      <h2>账号列表</h2>
+      <table class="user-table">
+        <colgroup><col style="width:34%"><col style="width:16%"><col style="width:25%"><col style="width:25%"></colgroup>
+        <thead><tr><th>账号</th><th>状态</th><th>注册时间</th><th>最近活跃</th></tr></thead>
+        <tbody id="userTableBody">
+          <tr><td colspan="4" class="empty-row">本机还没有注册账号</td></tr>
+        </tbody>
+      </table>
+      <p class="table-tip">只列出这台设备、这个浏览器里注册过的账号。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：发布 ===== -->
+  <div class="page-block" data-id="post">
+    <div class="section">
+      <h2>发布内容</h2>
+      <div class="user-now">
+        <div class="user-now-avatar" id="postAvatar">员</div>
+        <div class="user-now-info">
+          <p class="user-now-label">当前身份</p>
+          <h3 id="postWho">—</h3>
+          <p class="user-now-tip" id="postTitleTip">—</p>
+        </div>
+        <span class="status-pill is-online" id="postTitleBadge">头衔</span>
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="postTarget">发布位置</label>
+        <select id="postTarget" class="admin-input"></select>
+        <p class="img-note">这条内容会挂在所选页面的下方，除「官员」页外的位置都可以选。</p>
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="postText">正文</label>
+        <textarea id="postText" class="admin-input" rows="6" placeholder="写要发布的内容，换行会保留"></textarea>
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="postImage">配图（可选，自动压缩到长边 1080）</label>
+        <input id="postImage" class="admin-input" type="file" accept="image/*">
+        <p class="img-note" id="imgNote"></p>
+        <img class="img-preview" id="imgPreview" alt="配图预览">
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="postLink">或直接填图片链接</label>
+        <input id="postLink" class="admin-input" type="text" placeholder="https://...">
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="postTime">发布时间（自动记录）</label>
+        <input id="postTime" class="admin-input" type="text" readonly>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-primary" id="postSubmit" type="button">发布</button>
+        <button class="btn-ghost" id="postExport" type="button">导出我的发布</button>
+        <span class="admin-hint" id="postHint"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图：服主管理台 ===== -->
+  <div class="page-block" data-id="admin">
+    <div class="section">
+      <h2>服主管理台</h2>
+      <div class="user-now">
+        <div class="user-now-avatar">G</div>
+        <div class="user-now-info">
+          <p class="user-now-label">服主账号</p>
+          <h3>Gun7z</h3>
+          <p class="user-now-tip">可管理白名单、本机账号与站点内容。</p>
+        </div>
+        <span class="status-pill is-online">服主</span>
+      </div>
+      <p class="scope-tip">这是纯前端管理台：白名单、账号、内容都存在本机浏览器和仓库里的 content.json 中。服主密码写在页面源码里，懂技术的人打开开发者工具就能看到、也能改掉自己浏览器里的白名单——它挡得住随手注册，挡不住有意绕过。要真正防多号，需要接入后端（见 README）。</p>
+    </div>
+
+    <div class="section">
+      <h2>账号白名单</h2>
+      <p>只有名单里的名字才能注册，一行一个，区分大小写。名单为空时任何人都无法注册。</p>
+      <div class="admin-row" style="margin-top:12px;">
+        <textarea id="wlText" class="admin-input" rows="8" spellcheck="false" placeholder="Gun7z&#10;Altria_VAI"></textarea>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-primary" id="wlSave" type="button">保存白名单</button>
+        <span class="admin-hint" id="wlHint"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>本机账号</h2>
+      <table class="user-table">
+        <colgroup><col style="width:28%"><col style="width:14%"><col style="width:24%"><col style="width:24%"><col style="width:10%"></colgroup>
+        <thead><tr><th>账号</th><th>状态</th><th>注册时间</th><th>最近活跃</th><th>操作</th></tr></thead>
+        <tbody id="adminAccountBody">
+          <tr><td colspan="5" class="empty-row">本机还没有账号</td></tr>
+        </tbody>
+      </table>
+      <p class="table-tip">删除只对这台设备这个浏览器生效；被删账号需重新注册。</p>
+    </div>
+
+    <div class="section">
+      <h2>头衔授权</h2>
+      <p>给账号授予官员头衔（取自「官员」页的职位表），有头衔的成员才能在站内发布内容。</p>
+      <div class="admin-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <input id="grantName" class="admin-input" list="wlNames" placeholder="账号名，如 Altria_VAI" style="flex:1 1 200px;">
+        <datalist id="wlNames"></datalist>
+        <select id="grantTitle" class="admin-input" style="flex:1 1 200px;"></select>
+        <button class="btn-primary" id="grantBtn" type="button">授予</button>
+      </div>
+      <table class="user-table" style="margin-top:14px;">
+        <colgroup><col style="width:44%"><col style="width:44%"><col style="width:12%"></colgroup>
+        <thead><tr><th>账号</th><th>头衔</th><th>操作</th></tr></thead>
+        <tbody id="grantBody">
+          <tr><td colspan="3" class="empty-row">还没有授予任何头衔</td></tr>
+        </tbody>
+      </table>
+      <p class="table-tip">头衔写在 content.json 的 titles 里，导出上传后对所有设备生效。</p>
+    </div>
+
+    <div class="section">
+      <h2>发布管理</h2>
+      <p>查看、删除已发布的内容；也可导入成员交给你的 posts.json。</p>
+      <div class="admin-row" style="margin-top:12px;">
+        <input id="postsImport" class="admin-input" type="file" accept="application/json,.json">
+      </div>
+      <div class="post-list" id="adminPostList" style="margin-top:12px;">
+        <p class="post-empty">还没有发布内容</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>内容编辑</h2>
+      <div class="admin-row">
+        <label class="admin-label" for="pageSelect">选择页面</label>
+        <select id="pageSelect" class="admin-input"></select>
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="titleInput">页面标题</label>
+        <input id="titleInput" class="admin-input" type="text">
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="bodyInput">正文（一行一段）</label>
+        <textarea id="bodyInput" class="admin-input" rows="8" spellcheck="false"></textarea>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-primary" id="contentApply" type="button">应用到本站</button>
+        <button class="btn-ghost" id="contentReload" type="button">重新载入该页</button>
+        <span class="admin-hint" id="contentHint"></span>
+      </div>
+      <p class="table-tip">保存后先在本机预览；导出 content.json 并覆盖到仓库，才会对所有人生效。官员架构与用户页是结构化数据，不在此编辑。</p>
+    </div>
+
+    <div class="section">
+      <h2>导出与上传</h2>
+      <p>点下面按钮下载 content.json，把它上传覆盖到仓库根目录，等 1 分钟全站生效（白名单和内容一起更新）。</p>
+      <div class="admin-actions">
+        <button class="btn-primary" id="exportBtn" type="button">导出 content.json</button>
+        <button class="btn-ghost" id="draftClear" type="button">清除本机草稿</button>
+        <span class="admin-hint" id="exportHint"></span>
+      </div>
+      <p class="table-tip">本机草稿会覆盖线上版本，方便你先预览；确认线上版本正确后可以清除草稿。</p>
     </div>
   </div>
 
@@ -585,6 +842,492 @@ function readJSON(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return fallback; }
 }
 
+function nowISO() { return new Date().toISOString(); }
+
+function fmtTime(v) {
+  if (!v) return '—';
+  var d = new Date(v);
+  if (isNaN(d.getTime())) return '—';
+  function p(n) { return n < 10 ? '0' + n : '' + n; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+/* 记录账号元信息：注册时间 / 最近活跃 */
+function touchAccount(name) {
+  if (!name) return;
+  var meta = readJSON('lyt_meta', {});
+  if (!meta[name]) { meta[name] = { created: nowISO(), lastSeen: nowISO() }; }
+  meta[name].lastSeen = nowISO();
+  try { localStorage.setItem('lyt_meta', JSON.stringify(meta)); } catch (e) {}
+}
+
+/* 用户中心渲染：当前登录者记为在线，其余本机账号记为离线 */
+function renderUsers() {
+  var accounts = readJSON('lyt_accounts', {});
+  var meta = readJSON('lyt_meta', {});
+  var names = Object.keys(accounts).sort(function (a, b) {
+    return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
+  });
+  var cur = localStorage.getItem('lyt_logged') ? localStorage.getItem('lyt_user') : null;
+
+  document.getElementById('userNowAvatar').textContent = cur ? cur.charAt(0).toUpperCase() : '访';
+  document.getElementById('userNowName').textContent = cur || '未登录';
+  document.getElementById('userNowTip').textContent = cur
+    ? '已登录，退出后本账号转为离线。'
+    : '尚未登录，可在右上角登录或注册。';
+
+  var badge = document.getElementById('userNowBadge');
+  badge.textContent = cur ? '在线' : '离线';
+  badge.className = 'status-pill ' + (cur ? 'is-online' : 'is-offline');
+
+  document.getElementById('userTotal').textContent = names.length;
+  document.getElementById('userOnline').textContent = cur ? 1 : 0;
+  document.getElementById('userOffline').textContent = names.length - (cur ? 1 : 0);
+
+  var tbody = document.getElementById('userTableBody');
+  if (!names.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">本机还没有注册账号</td></tr>';
+    return;
+  }
+  tbody.innerHTML = names.map(function (n) {
+    var m = meta[n] || {};
+    var online = (n === cur);
+    return '<tr>' +
+      '<td class="cell-name">' + escapeHTML(n) + (online ? '<span class="row-you">你</span>' : '') + '</td>' +
+      '<td><span class="status-pill ' + (online ? 'is-online' : 'is-offline') + '">' + (online ? '在线' : '离线') + '</span></td>' +
+      '<td>' + fmtTime(m.created) + '</td>' +
+      '<td>' + fmtTime(m.lastSeen) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+/* ================= 服主 / 白名单 / 内容 ================= */
+var OWNER = { name: 'Gun7z', pwd: 'Gun7z' };
+var TEXT_PAGES = ['home', 'about', 'contact', 'gov', 'territory', 'buildings', 'history', 'relics', 'religion', 'other'];
+var PAGE_NAMES = {
+  home: '首页', about: '关于', contact: '联系', gov: '政务', territory: '领土', users: '用户',
+  officials: '官员', buildings: '建筑', history: '历史', relics: '文物', religion: '龙之心语教', other: '其他'
+};
+/* 发布位置：导航里的全部页面，除官员页（结构化架构，不放内容）与发布/管理自身 */
+var POST_TARGETS = ['home', 'about', 'contact', 'gov', 'territory', 'users', 'buildings', 'history', 'relics', 'religion', 'other'];
+
+/* 从页面里抓一份出厂内容，作为兜底与「恢复」的依据 */
+function captureDefaults() {
+  var pages = {};
+  TEXT_PAGES.forEach(function (id) {
+    var block = document.querySelector('.page-block[data-id="' + id + '"]');
+    if (!block) return;
+    var sec = block.querySelector('.section');
+    if (!sec) return;
+    var h2 = sec.querySelector('h2');
+    pages[id] = {
+      title: h2 ? h2.textContent.trim() : '',
+      paragraphs: [].slice.call(sec.querySelectorAll('p')).map(function (p) { return p.textContent.trim(); })
+    };
+  });
+  return pages;
+}
+
+var DEFAULT_SITE = { whitelist: [OWNER.name], titles: [], posts: [], pages: captureDefaults() };
+var SITE = JSON.parse(JSON.stringify(DEFAULT_SITE));
+var siteReady = false;
+
+function mergeSite(base, src) {
+  var out = JSON.parse(JSON.stringify(base));
+  if (!src) return out;
+  if (src.whitelist && src.whitelist.length) { out.whitelist = src.whitelist.slice(); }
+  if (Array.isArray(src.titles)) { out.titles = JSON.parse(JSON.stringify(src.titles)); }
+  if (Array.isArray(src.posts)) { out.posts = JSON.parse(JSON.stringify(src.posts)); }
+  if (src.pages) {
+    Object.keys(src.pages).forEach(function (id) {
+      if (!out.pages[id]) return;
+      if (src.pages[id].title) { out.pages[id].title = src.pages[id].title; }
+      if (src.pages[id].paragraphs) { out.pages[id].paragraphs = src.pages[id].paragraphs.slice(); }
+    });
+  }
+  return out;
+}
+
+function applyContent() {
+  TEXT_PAGES.forEach(function (id) {
+    var page = SITE.pages[id];
+    var block = document.querySelector('.page-block[data-id="' + id + '"]');
+    if (!page || !block) return;
+    var sec = block.querySelector('.section');
+    if (!sec) return;
+    var h2 = sec.querySelector('h2');
+    if (h2 && page.title) { h2.textContent = page.title; }
+    [].slice.call(sec.querySelectorAll('p')).forEach(function (p) { p.remove(); });
+    (page.paragraphs || []).forEach(function (t, i) {
+      var p = document.createElement('p');
+      p.textContent = t;
+      if (i > 0) { p.style.marginTop = '12px'; }
+      sec.appendChild(p);
+    });
+  });
+}
+
+/* 先看本机草稿，再看仓库里的 content.json，都没有就用出厂内容 */
+function loadSite() {
+  var draft = null;
+  try { draft = JSON.parse(localStorage.getItem('lyt_site') || 'null'); } catch (e) { draft = null; }
+  if (draft && draft.pages) {
+    SITE = mergeSite(DEFAULT_SITE, draft);
+    afterSite();
+    return;
+  }
+  fetch('content.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { if (d && d.pages) { SITE = mergeSite(DEFAULT_SITE, d); } afterSite(); })
+    .catch(function () { afterSite(); });
+}
+
+function afterSite() {
+  siteReady = true;
+  applyContent();
+  renderUsers();
+  renderAdmin();
+  refreshNav();
+  renderFeeds();
+  route(false);
+}
+
+function isOwner() {
+  return localStorage.getItem('lyt_role') === 'owner' && localStorage.getItem('lyt_user') === OWNER.name;
+}
+
+function currentUser() { return localStorage.getItem('lyt_logged') ? localStorage.getItem('lyt_user') : null; }
+
+function saveDraft() {
+  try { localStorage.setItem('lyt_site', JSON.stringify(SITE)); } catch (e) {}
+}
+
+/* ---- 管理台渲染 ---- */
+function renderAdmin() {
+  var wl = document.getElementById('wlText');
+  if (wl && !wl.dataset.touched) { wl.value = SITE.whitelist.join('\n'); }
+  var sel = document.getElementById('pageSelect');
+  if (sel && !sel.options.length) {
+    TEXT_PAGES.forEach(function (id) {
+      var o = document.createElement('option');
+      o.value = id;
+      o.textContent = PAGE_NAMES[id];
+      sel.appendChild(o);
+    });
+    loadPageIntoForm(sel.value);
+  }
+  var gsel = document.getElementById('grantTitle');
+  if (gsel && !gsel.options.length) {
+    collectTitleOptions().forEach(function (t) {
+      var o = document.createElement('option');
+      o.value = t;
+      o.textContent = t;
+      gsel.appendChild(o);
+    });
+  }
+
+  var dl = document.getElementById('wlNames');
+  if (dl) {
+    while (dl.firstChild) { dl.removeChild(dl.firstChild); }
+    var names = (SITE.whitelist || []).slice();
+    Object.keys(readJSON('lyt_accounts', {})).forEach(function (n) {
+      if (names.indexOf(n) === -1) { names.push(n); }
+    });
+    names.forEach(function (n) {
+      var o = document.createElement('option');
+      o.value = n;
+      dl.appendChild(o);
+    });
+  }
+
+  renderAdminAccounts();
+  renderGrants();
+  renderAdminPosts();
+}
+
+function renderAdminAccounts() {
+  var tbody = document.getElementById('adminAccountBody');
+  if (!tbody) return;
+  var accounts = readJSON('lyt_accounts', {});
+  var meta = readJSON('lyt_meta', {});
+  var cur = currentUser();
+  var names = Object.keys(accounts).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
+  if (!names.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-row">本机还没有账号</td></tr>';
+    return;
+  }
+  tbody.innerHTML = names.map(function (n) {
+    var m = meta[n] || {};
+    return '<tr>' +
+      '<td class="cell-name">' + escapeHTML(n) + (n === cur ? '<span class="row-you">当前</span>' : '') + '</td>' +
+      '<td>' + (n === cur ? '<span class="status-pill is-online">在线</span>' : '<span class="status-pill is-offline">离线</span>') + '</td>' +
+      '<td>' + fmtTime(m.created) + '</td>' +
+      '<td>' + fmtTime(m.lastSeen) + '</td>' +
+      '<td><button class="btn-danger" type="button" data-del="' + escapeHTML(n) + '">删除</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function loadPageIntoForm(id) {
+  var page = (SITE.pages[id] && SITE.pages[id]) || { title: '', paragraphs: [] };
+  document.getElementById('titleInput').value = page.title || '';
+  document.getElementById('bodyInput').value = (page.paragraphs || []).join('\n');
+}
+
+/* ---- 头衔与发布 ---- */
+function localPosts() {
+  try { return JSON.parse(localStorage.getItem('lyt_posts') || '[]'); } catch (e) { return []; }
+}
+
+function saveLocalPosts(list) {
+  try { localStorage.setItem('lyt_posts', JSON.stringify(list)); } catch (e) {}
+}
+
+/* 评论单独存：帖子可能是仓库里公开的，不在 lyt_posts 里，所以按帖子 id 挂 */
+function localComments() {
+  try { return JSON.parse(localStorage.getItem('lyt_comments') || '{}') || {}; } catch (e) { return {}; }
+}
+
+function saveLocalComments(m) {
+  try { localStorage.setItem('lyt_comments', JSON.stringify(m)); } catch (e) {}
+}
+
+/* 帖自带评论 + 本机评论，按 id 去重、时间正序 */
+function mergeComments(p) {
+  var base = Array.isArray(p.comments) ? p.comments.slice() : [];
+  var mine = localComments()[p.id] || [];
+  var seen = {}, out = [];
+  base.concat(mine).forEach(function (c) {
+    if (!c || !c.id || seen[c.id]) return;
+    seen[c.id] = 1;
+    out.push(c);
+  });
+  out.sort(function (a, b) { return String(a.time || '').localeCompare(String(b.time || '')); });
+  return out;
+}
+
+/* 仓库里已公开的 + 本机还没公开的，按 id 去重 */
+function allPosts() {
+  var base = (SITE.posts || []).slice();
+  var mine = localPosts();
+  var seen = {}, list = [];
+  base.concat(mine).forEach(function (p) {
+    if (p && p.id && !seen[p.id]) { seen[p.id] = 1; list.push(p); }
+  });
+  var out = list.map(function (p) {
+    var c = {
+      id: p.id, author: p.author, title: p.title, pos: p.pos || 'home',
+      text: p.text, image: p.image, time: p.time
+    };
+    c.comments = mergeComments(p);
+    return c;
+  });
+  out.sort(function (a, b) { return String(b.time || '').localeCompare(String(a.time || '')); });
+  return out;
+}
+
+/* 头衔选项取自「官员」页的职位行 */
+function collectTitleOptions() {
+  var out = [], seen = {};
+  [].slice.call(document.querySelectorAll('.staff-info strong')).forEach(function (s) {
+    var m = s.textContent.trim().match(/^职位[：:](.+)$/);
+    if (!m) return;
+    var t = m[1].trim();
+    if (t && !seen[t]) { seen[t] = 1; out.push(t); }
+  });
+  return out;
+}
+
+function myTitle() {
+  var u = currentUser();
+  if (!u) return '';
+  if (isOwner()) return '服主';
+  var list = SITE.titles || [];
+  for (var i = 0; i < list.length; i++) {
+    var it = list[i];
+    if (it && it.name && String(it.name).toLowerCase() === u.toLowerCase()) { return it.title || ''; }
+  }
+  return '';
+}
+
+function refreshNav() {
+  var postLink = document.getElementById('navPost');
+  if (postLink) { postLink.style.display = myTitle() ? '' : 'none'; }
+  var who = document.getElementById('postWho');
+  if (!who) return;
+  var u = currentUser();
+  var t = myTitle();
+  document.getElementById('postAvatar').textContent = u ? u.charAt(0).toUpperCase() : '员';
+  who.textContent = u || '未登录';
+  document.getElementById('postTitleBadge').textContent = t || '无头衔';
+  document.getElementById('postTitleTip').textContent = t
+    ? '当前头衔：' + t + '，可以发布内容。'
+    : '还没有头衔，请联系服主 Gun7z 授予。';
+  document.getElementById('postTime').value = fmtTime(nowISO());
+  fillTargetOptions();
+}
+
+function safeImageUrl(u) {
+  u = String(u || '').trim();
+  if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(u)) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  return '';
+}
+
+function compressImage(file, cb) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var img = new Image();
+    img.onload = function () {
+      var max = 1080, w = img.width, h = img.height;
+      if (w > max || h > max) {
+        var r = Math.min(max / w, max / h);
+        w = Math.round(w * r);
+        h = Math.round(h * r);
+      }
+      var c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      try { cb(c.toDataURL('image/jpeg', 0.82)); } catch (err) { cb(e.target.result); }
+    };
+    img.onerror = function () { cb(e.target.result); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function postPosLabel(p) {
+  var id = (p && p.pos) ? String(p.pos) : 'home';
+  return PAGE_NAMES[id] || '首页';
+}
+
+/* 评论列表 + 评论框；未登录只给提示 */
+function commentsHTML(p) {
+  var list = (p.comments || []).map(function (c) {
+    return '<div class="cmt-item">' +
+      '<div class="cmt-line"><span class="cmt-name">' + escapeHTML(c.author || '匿名') + '</span>' +
+      '<span class="cmt-meta">' + fmtTime(c.time) + '</span></div>' +
+      '<div class="cmt-text">' + escapeHTML(c.text || '') + '</div>' +
+      '</div>';
+  }).join('');
+  if (!list) { list = '<p class="cmt-empty">还没有评论</p>'; }
+  var form = currentUser()
+    ? '<form class="cmt-form" data-post-id="' + escapeHTML(p.id) + '">' +
+        '<input class="cmt-input" type="text" maxlength="200" placeholder="说点什么…" aria-label="评论内容">' +
+        '<button class="btn-primary cmt-btn" type="submit">评论</button>' +
+      '</form>'
+    : '<p class="cmt-tip">登录后可以评论。</p>';
+  return '<div class="cmt-wrap">' + list + form + '</div>';
+}
+
+function postCardHTML(p, withDelete) {
+  var src = safeImageUrl(p.image);
+  var img = src ? '<img class="post-image" src="' + src.replace(/"/g, '&quot;') + '" alt="配图" loading="lazy">' : '';
+  var pos = withDelete ? '<span class="post-pos">' + escapeHTML(postPosLabel(p)) + '</span>' : '';
+  var del = withDelete ? '<button class="btn-danger" type="button" data-post-del="' + escapeHTML(p.id) + '">删除</button>' : '';
+  return '<article class="post-card">' +
+    '<div class="post-head">' +
+      '<span class="post-author">' + escapeHTML(p.author || '匿名') + '</span>' +
+      (p.title ? '<span class="post-pill">' + escapeHTML(p.title) + '</span>' : '') +
+      pos +
+      '<span class="post-time">' + fmtTime(p.time) + '</span>' +
+      del +
+    '</div>' +
+    '<div class="post-text">' + escapeHTML(p.text || '') + '</div>' + img +
+    commentsHTML(p) +
+    '</article>';
+}
+
+/* 每个可发布页面下面挂一块「本页发布」，没内容就整块隐藏 */
+function ensureFeedBoxes() {
+  POST_TARGETS.forEach(function (id) {
+    var block = document.querySelector('.page-block[data-id="' + id + '"]');
+    if (!block || block.querySelector('.page-feed')) return;
+    var box = document.createElement('div');
+    box.className = 'section page-feed';
+    block.appendChild(box);
+  });
+}
+
+function renderFeeds() {
+  ensureFeedBoxes();
+  var posts = allPosts();
+  POST_TARGETS.forEach(function (id) {
+    var block = document.querySelector('.page-block[data-id="' + id + '"]');
+    if (!block) return;
+    var box = block.querySelector('.page-feed');
+    if (!box) return;
+    var mine = posts.filter(function (p) { return (p.pos || 'home') === id; });
+    if (!mine.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = '';
+    box.innerHTML =
+      '<h2>本页发布<span class="feed-count">' + mine.length + ' 条</span></h2>' +
+      '<p class="feed-tip">由获得头衔的成员发布，按发布时间倒序；登录后可以在下面评论。</p>' +
+      '<div class="post-list" style="margin-top:14px;">' +
+        mine.map(function (p) { return postCardHTML(p, false); }).join('') +
+      '</div>';
+  });
+}
+
+/* 发布位置下拉：除官员页外的导航页面 */
+function fillTargetOptions() {
+  var sel = document.getElementById('postTarget');
+  if (!sel) return;
+  var cur = sel.value;
+  if (!sel.options.length) {
+    POST_TARGETS.forEach(function (id) {
+      var o = document.createElement('option');
+      o.value = id;
+      o.textContent = PAGE_NAMES[id] || id;
+      sel.appendChild(o);
+    });
+  }
+  if (cur) { sel.value = cur; }
+}
+
+function renderAdminPosts() {
+  var box = document.getElementById('adminPostList');
+  if (!box) return;
+  var posts = allPosts();
+  box.innerHTML = posts.length
+    ? posts.map(function (p) { return postCardHTML(p, true); }).join('')
+    : '<p class="post-empty">还没有发布内容</p>';
+}
+
+function renderGrants() {
+  var body = document.getElementById('grantBody');
+  if (!body) return;
+  var list = SITE.titles || [];
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="3" class="empty-row">还没有授予任何头衔</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(function (it) {
+    return '<tr><td class="cell-name">' + escapeHTML(it.name) + '</td>' +
+      '<td>' + escapeHTML(it.title) + '</td>' +
+      '<td><button class="btn-danger" type="button" data-title-del="' + escapeHTML(it.name) + '">撤销</button></td></tr>';
+  }).join('');
+}
+
+function downloadJSON(obj, filename) {
+  var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+}
+
 function checkLogin() {
   var logged = localStorage.getItem('lyt_logged');
   var user = localStorage.getItem('lyt_user');
@@ -596,7 +1339,44 @@ function checkLogin() {
     authBefore.style.display = 'block';
     authAfter.classList.remove('show');
   }
+  var ownerNow = isOwner();
+  var admLink = document.getElementById('navAdmin');
+  var ob = document.getElementById('ownerBadge');
+  if (admLink) { admLink.style.display = ownerNow ? '' : 'none'; }
+  if (ob) { ob.style.display = ownerNow ? '' : 'none'; }
+  renderUsers();
+  refreshNav();
 }
+
+window.addEventListener('storage', function (e) {
+  if (e.key === 'lyt_logged' || e.key === 'lyt_user' || e.key === 'lyt_accounts') { checkLogin(); }
+  if (e.key === 'lyt_comments' || e.key === 'lyt_posts') { renderFeeds(); renderAdminPosts(); }
+});
+
+/* 评论提交：事件委托，卡片重渲染后依然有效 */
+document.addEventListener('submit', function (e) {
+  var f = e.target;
+  if (!f || !f.classList || !f.classList.contains('cmt-form')) return;
+  e.preventDefault();
+  var u = currentUser();
+  if (!u) { alert('请先登录后再评论'); return; }
+  var input = f.querySelector('.cmt-input');
+  var text = (input ? input.value : '').trim();
+  if (!text) { if (input) { input.focus(); } return; }
+  var pid = f.getAttribute('data-post-id');
+  if (!pid) return;
+  var m = localComments();
+  m[pid] = (m[pid] || []).concat([{
+    id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6),
+    author: u,
+    text: text,
+    time: nowISO()
+  }]);
+  saveLocalComments(m);
+  touchAccount(u);
+  renderFeeds();
+  renderAdminPosts();
+});
 
 document.getElementById('openLogin').onclick = function () { loginModal.classList.add('show'); };
 document.getElementById('loginClose').onclick = function () { loginModal.classList.remove('show'); };
@@ -610,11 +1390,19 @@ document.getElementById('regSubmit').onclick = function () {
   var p2 = document.getElementById('regPwd2').value;
   if (!u || !p) { alert('用户名和密码不能为空'); return; }
   if (p !== p2) { alert('两次密码不一致'); return; }
+  var wl = (SITE.whitelist || []).map(function (s) { return String(s).trim().toLowerCase(); });
+  if (wl.indexOf(u.toLowerCase()) === -1) {
+    alert('「' + u + '」不在账号白名单内，请联系服主 Gun7z 添加后再注册');
+    return;
+  }
   var accounts = readJSON('lyt_accounts', {});
   if (accounts[u]) { alert('该用户名已经存在'); return; }
   accounts[u] = p;
+  var meta = readJSON('lyt_meta', {});
+  meta[u] = { created: nowISO(), lastSeen: nowISO() };
   try {
     localStorage.setItem('lyt_accounts', JSON.stringify(accounts));
+    localStorage.setItem('lyt_meta', JSON.stringify(meta));
   } catch (e) {
     alert('当前浏览器禁止本地存储，注册失败');
     return;
@@ -628,9 +1416,25 @@ document.getElementById('loginSubmit').onclick = function () {
   var u = document.getElementById('loginUser').value.trim();
   var p = document.getElementById('loginPwd').value;
   var accounts = readJSON('lyt_accounts', {});
+
+  /* 服主登录：不要求在本地注册过 */
+  if (u === OWNER.name && p === OWNER.pwd) {
+    accounts[u] = p;
+    try { localStorage.setItem('lyt_accounts', JSON.stringify(accounts)); } catch (e) {}
+    touchAccount(u);
+    localStorage.setItem('lyt_logged', '1');
+    localStorage.setItem('lyt_user', u);
+    localStorage.setItem('lyt_role', 'owner');
+    loginModal.classList.remove('show');
+    checkLogin();
+    return;
+  }
+
   if (!accounts[u] || accounts[u] !== p) { alert('用户名或密码错误'); return; }
   localStorage.setItem('lyt_logged', '1');
   localStorage.setItem('lyt_user', u);
+  localStorage.setItem('lyt_role', 'member');
+  touchAccount(u);
   loginModal.classList.remove('show');
   checkLogin();
 };
@@ -639,7 +1443,9 @@ document.getElementById('loginSubmit').onclick = function () {
 document.getElementById('logoutBtn').onclick = function () {
   localStorage.removeItem('lyt_logged');
   localStorage.removeItem('lyt_user');
+  localStorage.removeItem('lyt_role');
   checkLogin();
+  if (String(location.hash).replace(/^#/, '') === 'admin') { location.hash = 'home'; }
 };
 
 /* ================= 移动端菜单 ================= */
@@ -682,7 +1488,21 @@ function renderPage(id) {
 
 function route(scrollTop) {
   var id = normalizePage(String(location.hash || '').replace(/^#/, ''));
+  /* 发布页要等 content.json 载入后才知道有没有头衔，先显示首页，载入完再切 */
+  if (id === 'post' && !siteReady) { renderPage('home'); return; }
+  if (id === 'admin' && !isOwner()) {
+    id = 'home';
+    try { history.replaceState(null, '', '#home'); } catch (e) {}
+  }
+  if (id === 'post' && !myTitle()) {
+    id = 'home';
+    try { history.replaceState(null, '', '#home'); } catch (e) {}
+  }
   renderPage(id);
+  if (localStorage.getItem('lyt_logged')) { touchAccount(localStorage.getItem('lyt_user')); }
+  if (id === 'users') { renderUsers(); }
+  if (id === 'post') { refreshNav(); }
+  if (id === 'admin') { renderAdminAccounts(); renderGrants(); renderAdminPosts(); }
   if (scrollTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 }
 
@@ -738,9 +1558,302 @@ treeExpands.forEach(function (head) {
   });
 });
 
+/* ================= 管理台交互 ================= */
+(function () {
+  var body = document.getElementById('adminAccountBody');
+  if (body) {
+    body.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-del]');
+      if (!btn) return;
+      var name = btn.getAttribute('data-del');
+      if (!confirm('确定删除本机账号「' + name + '」？')) return;
+      var accounts = readJSON('lyt_accounts', {});
+      var meta = readJSON('lyt_meta', {});
+      delete accounts[name];
+      delete meta[name];
+      try {
+        localStorage.setItem('lyt_accounts', JSON.stringify(accounts));
+        localStorage.setItem('lyt_meta', JSON.stringify(meta));
+      } catch (err) {}
+      if (currentUser() === name) {
+        localStorage.removeItem('lyt_logged');
+        localStorage.removeItem('lyt_user');
+        localStorage.removeItem('lyt_role');
+        if (String(location.hash).replace(/^#/, '') === 'admin') { location.hash = 'home'; }
+      }
+      checkLogin();
+      renderAdminAccounts();
+    });
+  }
+
+  var wlSave = document.getElementById('wlSave');
+  if (wlSave) {
+    wlSave.addEventListener('click', function () {
+      var ta = document.getElementById('wlText');
+      var lines = ta.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      var seen = {}, out = [];
+      lines.forEach(function (s) {
+        var k = s.toLowerCase();
+        if (!seen[k]) { seen[k] = 1; out.push(s); }
+      });
+      if (!out.length) { out = [OWNER.name]; }
+      SITE.whitelist = out;
+      ta.value = out.join('\n');
+      ta.dataset.touched = '1';
+      saveDraft();
+      var hint = document.getElementById('wlHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '已保存到本机草稿，共 ' + out.length + ' 个名字；导出 content.json 后对全站生效';
+    });
+  }
+
+  var sel = document.getElementById('pageSelect');
+  if (sel) { sel.addEventListener('change', function () { loadPageIntoForm(this.value); }); }
+
+  var applyBtn = document.getElementById('contentApply');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function () {
+      var id = sel.value;
+      var title = document.getElementById('titleInput').value.trim();
+      var hint = document.getElementById('contentHint');
+      if (!title) {
+        hint.className = 'admin-hint warn';
+        hint.textContent = '标题不能为空';
+        return;
+      }
+      var ps = document.getElementById('bodyInput').value.split('\n')
+        .map(function (s) { return s.trim(); })
+        .filter(function (s) { return s.length > 0; });
+      SITE.pages[id] = { title: title, paragraphs: ps };
+      applyContent();
+      saveDraft();
+      hint.className = 'admin-hint';
+      hint.textContent = '已应用到「' + PAGE_NAMES[id] + '」，本机已生效；导出 content.json 后全站生效';
+    });
+  }
+
+  var reloadBtn = document.getElementById('contentReload');
+  if (reloadBtn) {
+    reloadBtn.addEventListener('click', function () {
+      loadPageIntoForm(sel.value);
+      var hint = document.getElementById('contentHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '已重新载入该页当前内容';
+    });
+  }
+
+  var exportBtn = document.getElementById('exportBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function () {
+      var data = {
+        version: 2,
+        updated: nowISO(),
+        whitelist: SITE.whitelist,
+        titles: SITE.titles || [],
+        pages: SITE.pages,
+        posts: allPosts()
+      };
+      downloadJSON(data, 'content.json');
+      var hint = document.getElementById('exportHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '已导出：白名单 ' + SITE.whitelist.length + ' 个、头衔 ' + (SITE.titles || []).length + ' 个、发布 ' + allPosts().length + ' 条（含评论）、内容页 ' + Object.keys(SITE.pages).length + ' 个';
+    });
+  }
+
+  var clearBtn = document.getElementById('draftClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      localStorage.removeItem('lyt_site');
+      alert('本机草稿已清除，页面将重新载入线上版本');
+      location.reload();
+    });
+  }
+
+  /* ---- 头衔授予 ---- */
+  var grantBtn = document.getElementById('grantBtn');
+  if (grantBtn) {
+    grantBtn.addEventListener('click', function () {
+      var name = document.getElementById('grantName').value.trim();
+      var title = document.getElementById('grantTitle').value;
+      if (!name || !title) { alert('请填写账号名并选择头衔'); return; }
+      SITE.titles = SITE.titles || [];
+      var existed = null;
+      SITE.titles.forEach(function (it) {
+        if (it.name && it.name.toLowerCase() === name.toLowerCase()) { existed = it; }
+      });
+      if (existed) { existed.name = name; existed.title = title; }
+      else { SITE.titles.push({ name: name, title: title }); }
+      saveDraft();
+      renderGrants();
+      refreshNav();
+      document.getElementById('grantName').value = '';
+    });
+  }
+
+  var grantBody = document.getElementById('grantBody');
+  if (grantBody) {
+    grantBody.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-title-del]');
+      if (!b) return;
+      var name = b.getAttribute('data-title-del');
+      if (!confirm('撤销「' + name + '」的头衔？')) return;
+      SITE.titles = (SITE.titles || []).filter(function (it) { return it.name !== name; });
+      saveDraft();
+      renderGrants();
+      refreshNav();
+    });
+  }
+
+  /* ---- 发布 ---- */
+  var pendingImage = '';
+  var imgInput = document.getElementById('postImage');
+  if (imgInput) {
+    imgInput.addEventListener('change', function () {
+      var f = imgInput.files && imgInput.files[0];
+      var note = document.getElementById('imgNote');
+      var prev = document.getElementById('imgPreview');
+      if (!f) {
+        pendingImage = '';
+        prev.style.display = 'none';
+        note.textContent = '';
+        return;
+      }
+      if (f.size > 8 * 1024 * 1024) {
+        alert('图片超过 8MB，请先压小再传');
+        imgInput.value = '';
+        return;
+      }
+      note.textContent = '处理中…';
+      compressImage(f, function (dataUrl) {
+        pendingImage = dataUrl;
+        note.textContent = '已就绪，压缩后约 ' + Math.round(dataUrl.length / 1024) + ' KB';
+        prev.src = dataUrl;
+        prev.style.display = 'block';
+      });
+    });
+  }
+
+  var postSubmit = document.getElementById('postSubmit');
+  if (postSubmit) {
+    postSubmit.addEventListener('click', function () {
+      var hint = document.getElementById('postHint');
+      var t = myTitle();
+      if (!t) {
+        hint.className = 'admin-hint warn';
+        hint.textContent = '需要先由服主授予头衔才能发布';
+        return;
+      }
+      var text = document.getElementById('postText').value.trim();
+      if (!text) {
+        hint.className = 'admin-hint warn';
+        hint.textContent = '正文不能为空';
+        return;
+      }
+      var img = pendingImage || safeImageUrl(document.getElementById('postLink').value);
+      var pos = document.getElementById('postTarget').value || 'home';
+      if (POST_TARGETS.indexOf(pos) === -1) { pos = 'home'; }
+      var list = localPosts();
+      list.unshift({
+        id: 'p' + Date.now(),
+        author: currentUser() || '匿名',
+        title: t,
+        pos: pos,
+        text: text,
+        image: img,
+        time: nowISO(),
+        comments: []
+      });
+      saveLocalPosts(list);
+      renderFeeds();
+      renderAdminPosts();
+      document.getElementById('postText').value = '';
+      document.getElementById('postLink').value = '';
+      pendingImage = '';
+      document.getElementById('imgPreview').style.display = 'none';
+      document.getElementById('imgNote').textContent = '';
+      document.getElementById('postTime').value = fmtTime(nowISO());
+      hint.className = 'admin-hint';
+      hint.textContent = '已发布到「' + PAGE_NAMES[pos] + '」，本机已可见；导出后交给服主合并即对所有人生效';
+    });
+  }
+
+  var postExport = document.getElementById('postExport');
+  if (postExport) {
+    postExport.addEventListener('click', function () {
+      downloadJSON({ version: 1, exported: nowISO(), author: currentUser(), posts: localPosts() }, 'posts.json');
+      var hint = document.getElementById('postHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '已导出 posts.json（' + localPosts().length + ' 条），发给服主 Gun7z 合并即可';
+    });
+  }
+
+  /* ---- 发布管理：删除 / 导入 ---- */
+  var adminPostList = document.getElementById('adminPostList');
+  if (adminPostList) {
+    adminPostList.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-post-del]');
+      if (!b) return;
+      var id = b.getAttribute('data-post-del');
+      if (!confirm('删除这条发布？')) return;
+      SITE.posts = (SITE.posts || []).filter(function (p) { return p.id !== id; });
+      saveLocalPosts(localPosts().filter(function (p) { return p.id !== id; }));
+      var cm = localComments();
+      if (cm[id]) { delete cm[id]; saveLocalComments(cm); }
+      saveDraft();
+      renderAdminPosts();
+      renderFeeds();
+    });
+  }
+
+  var postsImport = document.getElementById('postsImport');
+  if (postsImport) {
+    postsImport.addEventListener('change', function () {
+      var f = postsImport.files && postsImport.files[0];
+      if (!f) return;
+      var r = new FileReader();
+      r.onload = function (e) {
+        var data;
+        try { data = JSON.parse(e.target.result); } catch (err) { alert('不是合法的 JSON 文件'); return; }
+        var incoming = (data && Array.isArray(data.posts)) ? data.posts : (Array.isArray(data) ? data : []);
+        if (!incoming.length) { alert('文件里没有 posts'); return; }
+        SITE.posts = SITE.posts || [];
+        var seen = {};
+        SITE.posts.forEach(function (p) { if (p && p.id) { seen[p.id] = 1; } });
+        var added = 0, merged = 0;
+        incoming.forEach(function (p) {
+          if (!p || !p.id) return;
+          if (!p.pos) { p.pos = 'home'; }
+          if (!Array.isArray(p.comments)) { p.comments = []; }
+          if (!seen[p.id]) { seen[p.id] = 1; SITE.posts.push(p); added++; return; }
+          /* 同一个 id：不覆盖，只把评论补进去 */
+          var target = null;
+          SITE.posts.forEach(function (x) { if (x && x.id === p.id) { target = x; } });
+          if (!target) return;
+          target.comments = target.comments || [];
+          var ids = {};
+          target.comments.forEach(function (c) { if (c && c.id) { ids[c.id] = 1; } });
+          p.comments.forEach(function (c) {
+            if (!c || !c.id || ids[c.id]) return;
+            ids[c.id] = 1;
+            target.comments.push(c);
+            merged++;
+          });
+        });
+        saveDraft();
+        renderAdminPosts();
+        renderFeeds();
+        alert('新增 ' + added + ' 条，补充评论 ' + merged + ' 条；导出 content.json 后公开');
+        postsImport.value = '';
+      };
+      r.readAsText(f, 'utf-8');
+    });
+  }
+})();
+
 /* ================= 初始化 ================= */
 checkLogin();
 route(false);
+loadSite();
 </script>
 </body>
 </html>
