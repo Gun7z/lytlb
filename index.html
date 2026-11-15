@@ -2302,8 +2302,8 @@ function applyAuthMode() {
 function ghCfg() {
   var d = readJSON('lyt_gh', {});
   return {
-    owner: String(d.owner || '').trim(),
-    repo: String(d.repo || '').trim(),
+    owner: String(d.owner || 'Gun7z').trim(),
+    repo: String(d.repo || 'lytlb').trim(),
     branch: String(d.branch || 'main').trim() || 'main',
     token: String(d.token || '').trim()
   };
@@ -2387,6 +2387,8 @@ function boot() {
       afterSite();
       return;
     }
+    /* 一进云端模式就切换登录框，别等数据加载完，避免点开还是旧字段 */
+    applyAuthMode();
     /* 云端连不上/太慢时别把页面卡在半成品状态：6 秒后退回本机模式 */
     var guard = setTimeout(function () {
       if (!siteReady) {
