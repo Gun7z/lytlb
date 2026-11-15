@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>页面走失了 · 洛亚提自由联邦</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", "PingFang SC", "Hiragino Sans GB", sans-serif; }
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f7f9fc; color: #333; padding: 24px; }
+.box { background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.06); padding: 36px 28px; max-width: 520px; width: 100%; text-align: center; }
+.code { font-size: 56px; font-weight: 700; color: #5B8DEF; letter-spacing: 2px; line-height: 1.1; }
+h1 { font-size: 1.15rem; margin: 12px 0 10px; font-weight: 600; }
+p { color: #666; font-size: 14px; line-height: 1.9; }
+a.btn { display: inline-block; margin-top: 22px; padding: 11px 22px; border-radius: 8px; background: #5B8DEF; color: #fff; text-decoration: none; font-size: 14px; transition: .2s; }
+a.btn:hover { background: #4577d6; }
+.tip { margin-top: 14px; font-size: 12px; color: #999; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="code">404</div>
+  <h1>这条通道暂时没有通向任何地方</h1>
+  <p>你访问的地址在洛亚提自由联邦市政厅中并不存在，<br>可能是链接拼写有误，或该页面已被迁移。</p>
+  <a class="btn" id="homeLink" href="./">返回市政厅首页</a>
+  <div class="tip" id="countdown"></div>
+</div>
+<script>
+/* 自动算出本站首页地址：
+   /仓库名/xxx   -> /仓库名/
+   /xxx（用户主页根站点）-> /
+   file:// 本地双击打开 -> ./index.html  */
+var isLocal = location.protocol === 'file:';
+var parts = location.pathname.replace(/\\/g, '/').split('/').filter(Boolean);
+var home = isLocal
+  ? './index.html'
+  : (parts.length > 1 ? '/' + parts[0] + '/' : '/');
+document.getElementById('homeLink').href = home;
+
+var left = 3;
+var node = document.getElementById('countdown');
+function tick() {
+  node.textContent = left + ' 秒后自动返回首页';
+  if (left <= 0) { location.replace(home); return; }
+  left--;
+  setTimeout(tick, 1000);
+}
+tick();
+</script>
+</body>
+</html>

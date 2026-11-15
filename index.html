@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>洛亚提自由联邦 - 市政厅官网</title>
+<meta name="description" content="洛亚提自由联邦官方市政厅网站：政务公示、领土概况、官员架构、建筑、历史、文物与宗教文化。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235B8DEF'/%3E%3Cpath d='M32 11 49 20v12c0 10-7 18-17 21-10-3-17-11-17-21V20z' fill='%23ffffff'/%3E%3Cpath d='M32 24v16M26 28h12' stroke='%235B8DEF' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", sans-serif; }
+:root {
+  --primary: #5B8DEF;
+  --primary-light: #e8f0fe;
+  --bg: #f7f9fc;
+  --white: #ffffff;
+  --text: #333333;
+  --text-muted: #666666;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --square-bg: #edf2fa;
+}
+html, body { background-color: var(--bg); color: var(--text); line-height: 1.7; overflow-x: hidden; }
+
+/* 导航栏 */
+header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+.navbar { max-width: 1250px; margin: 0 auto; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.nav-links { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.nav-links a { text-decoration: none; color: var(--text-muted); font-size: 13px; padding: 6px 9px; border-radius: 6px; transition: 0.2s ease; }
+.nav-links a.active { background-color: var(--primary); color: #fff; }
+.nav-links a:hover { background-color: var(--primary-light); color: var(--primary); }
+.auth-area { display: flex; align-items: center; gap: 12px; }
+.auth-area button { padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; transition: 0.2s ease; }
+.login-btn { background: var(--white); color: var(--primary); border: 1px solid var(--primary); }
+.register-btn { background: var(--primary); color: var(--white); }
+.user-area-logged { display: none; align-items: center; gap: 10px; }
+.user-area-logged.show { display: flex; }
+.avatar-placeholder { width: 34px; height: 34px; border-radius: 50%; background: #d8dce3; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; }
+.mobile-menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); }
+@media (max-width: 920px) {
+  .nav-links { display: none; position: absolute; top: 58px; left: 0; right: 0; background: var(--white); padding: 16px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); flex-direction: column; }
+  .nav-links.open { display: flex; }
+  .mobile-menu-toggle { display: block; }
+}
+
+/* 登录注册弹窗 */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; z-index: 999; align-items: center; justify-content: center; padding: 16px; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: var(--white); width: min(92%, 420px); padding: 30px 24px; border-radius: var(--radius); box-shadow: var(--shadow); }
+.modal-box h3 { margin-bottom: 16px; color: var(--text); }
+.modal-box input { width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+.modal-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+.modal-buttons button { padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer; }
+.modal-submit { background: var(--primary); color: var(--white); }
+.modal-close { background: #eee; color: var(--text); }
+.modal-tip { margin-top: 10px; font-size: 13px; color: var(--text-muted); }
+
+/* 横幅 */
+.banner-wrapper { position: relative; height: 260px; overflow: hidden; }
+.banner-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; }
+.banner-slide.active { opacity: 1; }
+.banner-slide.color-1 { background: #b8d8f0; }
+.banner-slide.color-2 { background: #a2cbe8; }
+.banner-slide.color-3 { background: #94bddb; }
+.banner-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.6); }
+
+/* 个人信息 */
+.profile-section { max-width: 1250px; margin: -60px auto 40px; padding: 0 20px; position: relative; }
+.profile-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.avatar-main-placeholder { width: 120px; height: 120px; border-radius: 50%; background: #d8dce3; border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+.profile-info { min-width: 0; }
+.profile-info h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); color: var(--text); margin-bottom: 6px; }
+.profile-info .tagline { color: var(--text-muted); font-size: 1rem; }
+
+/* 主容器 */
+.container { max-width: 1250px; margin: 0 auto 80px; padding: 0 20px; }
+.page-block { display: none; }
+.page-block.active { display: block; }
+.section { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px; margin-bottom: 24px; }
+.section h2 { color: var(--text); font-size: 1.3rem; margin-bottom: 16px; border-left: 4px solid var(--primary); padding-left: 10px; }
+
+/* 树状政体 */
+.tree-root { margin-top: 20px; }
+.tree-node { position: relative; margin: 8px 0; }
+.tree-line { border-left: 1px dashed #ccc; margin-left: 14px; padding-left: 18px; }
+.tree-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--primary-light); border-radius: 8px; cursor: pointer; font-weight: 500; }
+.tree-toggle-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--white); font-size: 14px; flex-shrink: 0; }
+.tree-children { overflow: hidden; max-height: 0; transition: max-height 0.35s ease; }
+.staff-card { display: flex; align-items: center; gap: 12px; background: var(--square-bg); padding: 10px 14px; border-radius: 8px; margin: 10px 0; }
+.staff-avatar-square { width: 48px; height: 48px; background: #c9d8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #224; font-weight: bold; flex-shrink: 0; }
+.staff-info { min-width: 0; }
+.staff-info p { line-height: 1.5; }
+.staff-id { font-weight: bold; color: var(--primary); }
+
+/* 社交 */
+.social-row { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+.social-row a { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; transition: 0.25s ease; }
+.social-row a:hover { background: var(--primary); color: var(--white); }
+
+/* 页脚 */
+footer { background: var(--white); border-top: 1px solid var(--border); padding: 24px 20px; text-align: center; color: var(--text-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ===== 登录弹窗 ===== -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <h3>登录账户</h3>
+    <input id="loginUser" placeholder="用户名" type="text">
+    <input id="loginPwd" placeholder="密码" type="password">
+    <div class="modal-buttons">
+      <button class="modal-close" id="loginClose" type="button">取消</button>
+      <button class="modal-submit" id="loginSubmit" type="button">登录</button>
+    </div>
+    <div class="modal-tip">账号本地保存，未来可绑定联邦职位权限</div>
+  </div>
+</div>
+
+<!-- ===== 注册弹窗 ===== -->
+<div class="modal-overlay" id="regModal">
+  <div class="modal-box">
+    <h3>新用户注册</h3>
+    <input id="regUser" placeholder="用户名" type="text">
+    <input id="regPwd" placeholder="密码" type="password">
+    <input id="regPwd2" placeholder="确认密码" type="password">
+    <div class="modal-buttons">
+      <button class="modal-close" id="regClose" type="button">取消</button>
+      <button class="modal-submit" id="regSubmit" type="button">注册</button>
+    </div>
+    <div class="modal-tip">注册信息仅保存在本地浏览器</div>
+  </div>
+</div>
+
+<!-- ===== 导航栏 ===== -->
+<header>
+  <div class="navbar">
+    <button class="mobile-menu-toggle" id="menuToggle" type="button" aria-label="打开菜单">&#9776;</button>
+    <nav class="nav-links" id="navMenu">
+      <a href="#home" data-page="home" class="nav-link active">首页</a>
+      <a href="#about" data-page="about" class="nav-link">关于</a>
+      <a href="#contact" data-page="contact" class="nav-link">联系</a>
+      <a href="#gov" data-page="gov" class="nav-link">政务</a>
+      <a href="#territory" data-page="territory" class="nav-link">领土</a>
+      <a href="#officials" data-page="officials" class="nav-link">官员</a>
+      <a href="#buildings" data-page="buildings" class="nav-link">建筑</a>
+      <a href="#history" data-page="history" class="nav-link">历史</a>
+      <a href="#relics" data-page="relics" class="nav-link">文物</a>
+      <a href="#religion" data-page="religion" class="nav-link">宗教</a>
+      <a href="#other" data-page="other" class="nav-link">其他</a>
+    </nav>
+    <div class="auth-area">
+      <div id="auth-before">
+        <button class="login-btn" id="openLogin" type="button">登录</button>
+        <button class="register-btn" id="openReg" type="button">注册</button>
+      </div>
+      <div class="user-area-logged" id="auth-after">
+        <div class="avatar-placeholder" id="navAvatar">用户</div>
+        <span id="navUserName"></span>
+        <button class="login-btn" id="logoutBtn" type="button">退出</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 横幅轮播 ===== -->
+<div class="banner-wrapper" id="banner">
+  <div class="banner-slide active color-1"></div>
+  <div class="banner-slide color-2"></div>
+  <div class="banner-slide color-3"></div>
+  <div class="banner-overlay"></div>
+</div>
+
+<!-- ===== 主页信息 ===== -->
+<main class="profile-section">
+  <div class="profile-card">
+    <div class="avatar-main-placeholder">联邦</div>
+    <div class="profile-info">
+      <h1>洛亚提自由联邦</h1>
+      <p class="tagline">嗨嗨，这里是有趣的洛亚提频道！一起玩耍吧~</p>
+    </div>
+  </div>
+</main>
+
+<!-- ===== 主内容容器 ===== -->
+<div class="container">
+
+  <!-- ===== 视图：首页 ===== -->
+  <div class="page-block active" data-id="home">
+    <div class="section">
+      <h2>联邦首页 · 公告中心</h2>
+      <p>欢迎访问洛亚提自由联邦官方市政厅网站。本站为联邦官方综合展示平台，涵盖政务公示、领土概况、完整官员树状架构、建筑风貌、历史文物、宗教文化、公共通知等全部官方内容。全站支持移动端自适应、交互式层级查看、动态菜单切换、本地账户注册登录。</p>
+      <p style="margin-top:12px">联邦秉持自由、公正、共建、共治的发展理念，全体居民共同建设、共同守护这片领土。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：关于 ===== -->
+  <div class="page-block" data-id="about">
+    <div class="section">
+      <h2>关于洛亚提自由联邦</h2>
+      <p>洛亚提自由联邦是一个崇尚自由平等、多元包容、秩序井然的自治联邦国度。联邦实行<strong>元首统辖、首相执政、八部门上议会 + 下议会、宗教文化并行</strong>的完整治理体系，分工明确、层级清晰、各司其职，保障联邦长期稳定发展、持续建设、繁荣存续。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：联系 ===== -->
+  <div class="page-block" data-id="contact">
+    <div class="section">
+      <h2>联系 &amp; 社交渠道</h2>
+      <p>你可以通过以下官方渠道关注联邦动态、提交建议、申请入驻、咨询政务信息。</p>
+      <div class="social-row">
+        <a href="#contact" data-noop title="官方社群">◎</a>
+        <a href="#contact" data-noop title="公告频道">◇</a>
+        <a href="#contact" data-noop title="建设反馈">☆</a>
+        <a href="#contact" data-noop title="官方存档">○</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图：政务 ===== -->
+  <div class="page-block" data-id="gov">
+    <div class="section">
+      <h2>政务公示中心</h2>
+      <p>展示联邦最新政务公告、政策发布、任免公示、建设通知、条例更新、公共事务处理记录。所有政务内容由首相统筹、上下议会八大部门审核发布。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：领土 ===== -->
+  <div class="page-block" data-id="territory">
+    <div class="section">
+      <h2>领土疆域概况</h2>
+      <p>洛亚提自由联邦拥有完整疆域领土，包含地表建设区域、地下工程区域、农业产区、国防防线、行政镇区、后勤储备区、宫殿专属区域、宣传文化区域、宗教文化区域等功能板块。领土由各议会分工管辖维护。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：官员（完整树状） ===== -->
+  <div class="page-block" data-id="officials">
+    <div class="section">
+      <h2>联邦官员架构（完整树状 · 全员 ID 绑定）</h2>
+      <p>政体层级：元首 → 首相 → 上议会八大职能部门 / 下议会</p>
+
+      <div class="tree-root">
+        <!-- 1. 元首 -->
+        <div class="tree-node">
+          <div class="tree-head tree-expand">
+            <span class="tree-toggle-icon">+</span>
+            <span>🏛️ 联邦元首（最高统辖）</span>
+          </div>
+          <div class="tree-children tree-line">
+            <div class="staff-card">
+              <div class="staff-avatar-square">元</div>
+              <div class="staff-info">
+                <p><strong>职位：联邦元首</strong></p>
+                <p>账号 ID：<span class="staff-id">Gun7z</span></p>
+                <p>职能：联邦最高权力持有者，统筹全部议会、部门、领土、军事、建设、行政、宗教全部事务，拥有最终裁定权。</p>
+              </div>
+            </div>
+
+            <!-- 2. 首相 -->
+            <div class="tree-node" style="margin-top:12px;">
+              <div class="tree-head tree-expand">
+                <span class="tree-toggle-icon">+</span>
+                <span>👔 联邦首相（全权执政）</span>
+              </div>
+              <div class="tree-children tree-line">
+                <div class="staff-card">
+                  <div class="staff-avatar-square">首</div>
+                  <div class="staff-info">
+                    <p><strong>职位：联邦首相</strong></p>
+                    <p>账号 ID：<span class="staff-id">Altria_VAI</span></p>
+                    <p>职能：承接元首指令，统筹上议会八大部门、下议会全部日常执政、事务调度、政策落地、人事统筹。</p>
+                  </div>
+                </div>
+
+                <!-- 上议会 -->
+                <div class="tree-node" style="margin-top:12px;">
+                  <div class="tree-head tree-expand">
+                    <span class="tree-toggle-icon">+</span>
+                    <span>📜 上议会（八大职能部门）</span>
+                  </div>
+                  <div class="tree-children tree-line">
+
+                    <!-- 部门 1：建筑议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>🏗️ 建筑议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">地</div>
+                          <div class="staff-info">
+                            <p><strong>职位：地表建设部部长</strong></p>
+                            <p>账号 ID：<span class="staff-id">NorGestrel</span></p>
+                            <p>职能：联邦地表城镇、道路、市政、景观、公共建筑规划与施工管理。</p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">下</div>
+                          <div class="staff-info">
+                            <p><strong>职位：地下建设部部长</strong></p>
+                            <p>账号 ID：<span class="staff-id">konglong</span></p>
+                            <p>职能：地下通道、地下仓库、地下工程、隐蔽设施建设与维护。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 2：财政议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>💰 财政议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">财</div>
+                          <div class="staff-info">
+                            <p><strong>职位：财政议会总长</strong></p>
+                            <p>账号 ID：<span class="staff-id">Rootbean</span></p>
+                            <p>职能：统筹联邦经济、物资收支、资产统计、经费分配、全局资源管控。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 3：农业议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>🌾 农业议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">农</div>
+                          <div class="staff-info">
+                            <p><strong>职位：农业议会议长</strong></p>
+                            <p>账号 ID：<span class="staff-id">dashui99</span></p>
+                            <p>职能：联邦全部粮食、畜牧、作物、林业生态资源保障、农田规划与产出管理。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 4：国防议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>🛡️ 国防议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">防</div>
+                          <div class="staff-info">
+                            <p><strong>职位：国防议会总长</strong></p>
+                            <p>账号 ID：<span class="staff-id">YIngtu2026</span></p>
+                            <p>职能：领土安防、边境巡逻、防务建设、秩序维护、应急处置、领土安全保障。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 5：后勤议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>📦 后勤议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">后</div>
+                          <div class="staff-info">
+                            <p><strong>职位：后勤议会总长</strong></p>
+                            <p>账号 ID：<span class="staff-id">Mo_Cha_OVO</span></p>
+                            <p>职能：物资运输、仓储管理、资源调配、民生保障、基建耗材全局补给。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 6：行政议会 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>🏛️ 行政议会</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">邦</div>
+                          <div class="staff-info">
+                            <p><strong>职位：联邦邦长</strong></p>
+                            <p>账号 ID：<span class="staff-id">Mian_Ba0</span></p>
+                            <p>职能：管辖联邦整体行政秩序、跨区域事务统筹、镇区总管。</p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：繁华领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">SUNO98『繁华领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：鱼桌领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">dashui99『鱼桌领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：埃卢夫加德·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">ecyseikai『埃卢夫加德』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：布达拉宫领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">sakura_xxh『布达拉宫领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：莱博塔利亚领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">SSDJJR『莱博塔利亚领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：普瑞斯玛领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">xieyufive『普瑞斯玛领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：赫利安索领主·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">Fish7_777777『赫利安索领主』</span></p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">镇</div>
+                          <div class="staff-info">
+                            <p><strong>职位：无敌章鱼堡·镇长</strong></p>
+                            <p>账号 ID：<span class="staff-id">yubelain『无敌章鱼堡领主』</span></p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 7：宫殿部 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>👑 宫殿部（皇室职能）</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">公</div>
+                          <div class="staff-info">
+                            <p><strong>职位：长公主</strong></p>
+                            <p>账号 ID：<span class="staff-id">Akar1_17『长公主』</span></p>
+                            <p>职能：联邦皇室礼仪、宫殿内务、皇室形象统筹、高阶外交陪同。</p>
+                          </div>
+                        </div>
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">公</div>
+                          <div class="staff-info">
+                            <p><strong>职位：公主</strong></p>
+                            <p>账号 ID：<span class="staff-id">kila_yu『公主』</span></p>
+                            <p>职能：协助长公主管理宫殿事务、文化礼仪、皇室活动主持。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 部门 8：宣传部 -->
+                    <div class="tree-node">
+                      <div class="tree-head tree-expand">
+                        <span class="tree-toggle-icon">+</span>
+                        <span>📢 宣传部（联邦宣发）</span>
+                      </div>
+                      <div class="tree-children tree-line">
+                        <div class="staff-card">
+                          <div class="staff-avatar-square">宣</div>
+                          <div class="staff-info">
+                            <p><strong>职位：宣传部总长</strong></p>
+                            <p>账号 ID：<span class="staff-id">wodeSJQD</span></p>
+                            <p>职能：联邦对外宣传、公告排版、文化输出、社群运营、形象包装、新闻发布。</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- 下议会 -->
+                <div class="tree-node" style="margin-top:12px;">
+                  <div class="tree-head tree-expand">
+                    <span class="tree-toggle-icon">+</span>
+                    <span>📋 下议会（民生监察）</span>
+                  </div>
+                  <div class="tree-children tree-line">
+                    <div class="staff-card">
+                      <div class="staff-avatar-square">监</div>
+                      <div class="staff-info">
+                        <p><strong>下议会职能</strong></p>
+                        <p>负责居民民生服务、秩序监督、建议收集、纠纷调解、文明建设、社群管理、民意汇总。</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 视图：建筑 ===== -->
+  <div class="page-block" data-id="buildings">
+    <div class="section">
+      <h2>联邦建筑体系</h2>
+      <p>联邦建筑分为<strong>地表建设</strong>与<strong>地下建设</strong>两大体系，由上议会建筑议会全权规划、审批、施工、维护，涵盖市政建筑、景观地标、民生设施、地下工程、仓储通道、宫殿皇室建筑群。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：历史 ===== -->
+  <div class="page-block" data-id="history">
+    <div class="section">
+      <h2>联邦发展历史</h2>
+      <p>记录洛亚提自由联邦自建立以来的发展历程、重大事件、制度迭代、领土建设里程碑、部门新增记录、皇室体系建立与宣传体系落成。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：文物 ===== -->
+  <div class="page-block" data-id="relics">
+    <div class="section">
+      <h2>联邦文物与典藏</h2>
+      <p>收录联邦历史性物件、纪念藏品、地标遗存、珍贵档案、艺术作品、皇室典藏文物，由行政议会与宫殿部联合保管登记。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：宗教 ===== -->
+  <div class="page-block" data-id="religion">
+    <div class="section">
+      <h2>联邦宗教文化体系</h2>
+      <p>宗教为洛亚提自由联邦官方文化组成部分，属于独立文化体系，不受行政议会管辖，保持自由、包容、和谐的信仰氛围。联邦尊重多元信仰、文化传承、精神建设。</p>
+      <p style="margin-top:12px;">宗教板块负责联邦精神文明建设、传统习俗传承、信仰文化活动、神圣区域维护、文化仪式统筹。</p>
+    </div>
+  </div>
+
+  <!-- ===== 视图：其他 ===== -->
+  <div class="page-block" data-id="other">
+    <div class="section">
+      <h2>其他公示与补充</h2>
+      <p>包含未分类公告、资源存档、规则补充、版本更新记录、公共说明、职位变动公示入口。</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== 页脚 ===== -->
+<footer>
+  © 2026 LYTZYLB 洛亚提自由联邦 · 市政厅官方网站｜全职位 ID 备案系统
+</footer>
+
+<script>
+/* ================= 登录注册状态 ================= */
+var authBefore = document.getElementById('auth-before');
+var authAfter = document.getElementById('auth-after');
+var navUserName = document.getElementById('navUserName');
+var loginModal = document.getElementById('loginModal');
+var regModal = document.getElementById('regModal');
+
+function readJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return fallback; }
+}
+
+function checkLogin() {
+  var logged = localStorage.getItem('lyt_logged');
+  var user = localStorage.getItem('lyt_user');
+  if (logged && user) {
+    authBefore.style.display = 'none';
+    authAfter.classList.add('show');
+    navUserName.innerText = user;
+  } else {
+    authBefore.style.display = 'block';
+    authAfter.classList.remove('show');
+  }
+}
+
+document.getElementById('openLogin').onclick = function () { loginModal.classList.add('show'); };
+document.getElementById('loginClose').onclick = function () { loginModal.classList.remove('show'); };
+document.getElementById('openReg').onclick = function () { regModal.classList.add('show'); };
+document.getElementById('regClose').onclick = function () { regModal.classList.remove('show'); };
+
+/* 注册 */
+document.getElementById('regSubmit').onclick = function () {
+  var u = document.getElementById('regUser').value.trim();
+  var p = document.getElementById('regPwd').value;
+  var p2 = document.getElementById('regPwd2').value;
+  if (!u || !p) { alert('用户名和密码不能为空'); return; }
+  if (p !== p2) { alert('两次密码不一致'); return; }
+  var accounts = readJSON('lyt_accounts', {});
+  if (accounts[u]) { alert('该用户名已经存在'); return; }
+  accounts[u] = p;
+  try {
+    localStorage.setItem('lyt_accounts', JSON.stringify(accounts));
+  } catch (e) {
+    alert('当前浏览器禁止本地存储，注册失败');
+    return;
+  }
+  alert('注册成功！可登录联邦系统');
+  regModal.classList.remove('show');
+};
+
+/* 登录 */
+document.getElementById('loginSubmit').onclick = function () {
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPwd').value;
+  var accounts = readJSON('lyt_accounts', {});
+  if (!accounts[u] || accounts[u] !== p) { alert('用户名或密码错误'); return; }
+  localStorage.setItem('lyt_logged', '1');
+  localStorage.setItem('lyt_user', u);
+  loginModal.classList.remove('show');
+  checkLogin();
+};
+
+/* 退出 */
+document.getElementById('logoutBtn').onclick = function () {
+  localStorage.removeItem('lyt_logged');
+  localStorage.removeItem('lyt_user');
+  checkLogin();
+};
+
+/* ================= 移动端菜单 ================= */
+var menuToggle = document.getElementById('menuToggle');
+var navMenu = document.getElementById('navMenu');
+menuToggle.addEventListener('click', function () { navMenu.classList.toggle('open'); });
+
+/* ================= 横幅轮播 ================= */
+var slides = document.querySelectorAll('.banner-slide');
+var current = 0;
+setInterval(function () {
+  slides[current].classList.remove('active');
+  current = (current + 1) % slides.length;
+  slides[current].classList.add('active');
+}, 5000);
+
+/* ================= 视图路由 =================
+   地址形如 https://<用户名>.github.io/<仓库名>/#officials
+   直接带 hash 打开或刷新，都会落到正确视图；hash 无效时回到首页，不会白屏 */
+var navLinks = [].slice.call(document.querySelectorAll('.nav-link'));
+var pageBlocks = [].slice.call(document.querySelectorAll('.page-block'));
+
+function normalizePage(id) {
+  var ok = false;
+  for (var i = 0; i < pageBlocks.length; i++) {
+    if (pageBlocks[i].dataset.id === id) { ok = true; break; }
+  }
+  return ok ? id : 'home';
+}
+
+function renderPage(id) {
+  navLinks.forEach(function (link) {
+    link.classList.toggle('active', link.dataset.page === id);
+  });
+  pageBlocks.forEach(function (page) {
+    page.classList.toggle('active', page.dataset.id === id);
+  });
+  navMenu.classList.remove('open');
+}
+
+function route(scrollTop) {
+  var id = normalizePage(String(location.hash || '').replace(/^#/, ''));
+  renderPage(id);
+  if (scrollTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+window.addEventListener('hashchange', function () { route(true); });
+
+navLinks.forEach(function (link) {
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    var target = normalizePage(link.dataset.page);
+    if (String(location.hash).replace(/^#/, '') === target) {
+      route(true);
+    } else {
+      location.hash = target;
+    }
+  });
+});
+
+/* 联系页占位图标不跳转 */
+document.querySelectorAll('[data-noop]').forEach(function (a) {
+  a.addEventListener('click', function (e) { e.preventDefault(); });
+});
+
+/* ================= 树状展开 ================= */
+var treeExpands = document.querySelectorAll('.tree-expand');
+var ANIM_DURATION = 360;
+
+treeExpands.forEach(function (head) {
+  head.addEventListener('click', function () {
+    var children = head.nextElementSibling;
+    if (!children) return;
+    var icon = head.querySelector('.tree-toggle-icon');
+    var isOpen = children.classList.contains('open');
+
+    if (isOpen) {
+      children.style.maxHeight = children.scrollHeight + 'px';
+      requestAnimationFrame(function () { children.style.maxHeight = '0px'; });
+      children.classList.remove('open');
+      icon.textContent = '+';
+    } else {
+      children.classList.add('open');
+      icon.textContent = '\u2212';
+      children.style.maxHeight = 'none';
+      var fullHeight = children.scrollHeight;
+      children.style.maxHeight = '0px';
+      requestAnimationFrame(function () { children.style.maxHeight = fullHeight + 'px'; });
+      setTimeout(function () {
+        if (children.classList.contains('open')) {
+          children.style.maxHeight = '9999px';
+        }
+        head.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, ANIM_DURATION);
+    }
+  });
+});
+
+/* ================= 初始化 ================= */
+checkLogin();
+route(false);
+</script>
+</body>
+</html>
