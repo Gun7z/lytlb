@@ -139,6 +139,7 @@ header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); posit
 .user-table th, .user-table td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--border); word-break: break-all; }
 .user-table th { background: #f5f8ff; color: var(--text-muted); font-weight: 500; font-size: 13px; }
 .cell-name { font-weight: 600; }
+.cell-dim { color: var(--text-muted); }
 .row-you { font-size: 11px; color: var(--primary); background: var(--primary-light); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
 .empty-row { text-align: center; color: var(--text-muted); }
 .table-tip { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); }
@@ -146,6 +147,7 @@ header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); posit
 
 /* 服主管理台 */
 .owner-badge { background: #fff4e5; color: #a05a00; border: 1px solid #f0cfa0; border-radius: 999px; font-size: 12px; padding: 1px 9px; }
+  .title-badge { background: var(--primary-light); color: var(--primary); border: 1px solid #c7dafd; border-radius: 999px; font-size: 12px; padding: 1px 9px; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font-size: 14px; font-family: inherit; line-height: 1.7; background: var(--white); color: var(--text); }
 .admin-input:focus { outline: none; border-color: var(--primary); }
 .admin-row { margin-bottom: 14px; }
@@ -252,7 +254,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
       <a href="#buildings" data-page="buildings" class="nav-link">建筑</a>
       <a href="#history" data-page="history" class="nav-link">历史</a>
       <a href="#relics" data-page="relics" class="nav-link">文物</a>
-      <a href="#religion" data-page="religion" class="nav-link">龙心教</a>
+      <a href="#religion" data-page="religion" class="nav-link">龙语先知教</a>
       <a href="#other" data-page="other" class="nav-link">其他</a>
     </nav>
     <div class="auth-area">
@@ -263,6 +265,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
       <div class="user-area-logged" id="auth-after">
         <div class="avatar-placeholder" id="navAvatar">用户</div>
         <span id="navUserName"></span>
+        <span class="title-badge" id="navTitle" style="display:none"></span>
         <span class="owner-badge" id="ownerBadge" style="display:none">服主</span>
         <button class="login-btn" id="logoutBtn" type="button">退出</button>
       </div>
@@ -656,12 +659,12 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
     </div>
   </div>
 
-  <!-- ===== 视图：龙之心语教 ===== -->
+  <!-- ===== 视图：龙语先知教 ===== -->
   <div class="page-block" data-id="religion">
     <div class="section">
-      <h2>龙之心语教</h2>
-      <p>龙之心语教为洛亚提自由联邦官方宗教，属独立文化体系，不受行政议会管辖，保持自由、包容、和谐的信仰氛围。联邦尊重多元信仰、文化传承与精神建设。</p>
-      <p style="margin-top:12px;">龙之心语教负责联邦精神文明建设、传统习俗传承、信仰文化活动、神圣区域维护与文化仪式统筹。</p>
+      <h2>龙语先知教</h2>
+      <p>龙语先知教为洛亚提自由联邦官方宗教，属独立文化体系，不受行政议会管辖，保持自由、包容、和谐的信仰氛围。联邦尊重多元信仰、文化传承与精神建设。</p>
+      <p style="margin-top:12px;">龙语先知教负责联邦精神文明建设、传统习俗传承、信仰文化活动、神圣区域维护与文化仪式统筹。</p>
     </div>
   </div>
 
@@ -676,7 +679,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
   <!-- ===== 视图：用户 ===== -->
   <div class="page-block" data-id="users">
     <div class="section">
-      <h2>用户中心（本机账号）</h2>
+      <h2>用户中心（全联邦成员）</h2>
       <div class="user-now">
         <div class="user-now-avatar" id="userNowAvatar">访</div>
         <div class="user-now-info">
@@ -687,22 +690,22 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
         <span class="status-pill is-offline" id="userNowBadge">离线</span>
       </div>
       <div class="stat-grid">
-        <div class="stat-box"><p class="stat-num" id="userTotal">0</p><p class="stat-label">本机注册账号</p></div>
+        <div class="stat-box"><p class="stat-num" id="userTotal">0</p><p class="stat-label">成员总数</p></div>
         <div class="stat-box"><p class="stat-num online-num" id="userOnline">0</p><p class="stat-label">在线</p></div>
         <div class="stat-box"><p class="stat-num" id="userOffline">0</p><p class="stat-label">离线</p></div>
       </div>
-      <p class="scope-tip">判定规则：当前浏览器里处于登录状态的账号记为「在线」，其余已注册账号记为「离线」。账号数据只存在本机浏览器，换设备或换浏览器不会同步。</p>
+      <p class="scope-tip">判定规则：名单取自云端成员表，任何设备连同一个云端；打开着本站的成员记为「在线」，离开或关闭页面即转「离线」，实时更新、无需刷新。</p>
     </div>
     <div class="section">
       <h2>账号列表</h2>
       <table class="user-table">
-        <colgroup><col style="width:34%"><col style="width:16%"><col style="width:25%"><col style="width:25%"></colgroup>
-        <thead><tr><th>账号</th><th>状态</th><th>注册时间</th><th>最近活跃</th></tr></thead>
+        <colgroup><col style="width:32%"><col style="width:26%"><col style="width:16%"><col style="width:26%"></colgroup>
+        <thead><tr><th>账号</th><th>头衔</th><th>状态</th><th>注册时间</th></tr></thead>
         <tbody id="userTableBody">
-          <tr><td colspan="4" class="empty-row">本机还没有注册账号</td></tr>
+          <tr><td colspan="4" class="empty-row">暂无成员</td></tr>
         </tbody>
       </table>
-      <p class="table-tip">只列出这台设备、这个浏览器里注册过的账号。</p>
+      <p class="table-tip">名单与在线状态走云端，换设备、换浏览器看到的都是同一份。</p>
     </div>
   </div>
 
@@ -918,6 +921,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
 var authBefore = document.getElementById('auth-before');
 var authAfter = document.getElementById('auth-after');
 var navUserName = document.getElementById('navUserName');
+var navTitle = document.getElementById('navTitle');
 var loginModal = document.getElementById('loginModal');
 var regModal = document.getElementById('regModal');
 
@@ -950,42 +954,92 @@ function touchAccount(name) {
   try { localStorage.setItem('lyt_meta', JSON.stringify(meta)); } catch (e) {}
 }
 
-/* 用户中心渲染：当前登录者记为在线，其余本机账号记为离线 */
+/* 取某人的头衔（titles 表 / 本机 titles 通用） */
+function titleOf(name) {
+  if (!name) { return ''; }
+  var list = SITE.titles || [];
+  var low = String(name).toLowerCase();
+  for (var i = 0; i < list.length; i++) {
+    var it = list[i];
+    if (it && it.name && String(it.name).toLowerCase() === low && it.title) { return it.title; }
+  }
+  return '';
+}
+
+function isOnlineName(name) {
+  if (!name) { return false; }
+  var low = String(name).toLowerCase();
+  var arr = CLOUD.online || [];
+  for (var i = 0; i < arr.length; i++) {
+    if (String(arr[i]).toLowerCase() === low) { return true; }
+  }
+  return false;
+}
+
+/* 用户中心渲染：云端模式列出全体成员，在线状态由 realtime presence 判定（跨设备同步） */
 function renderUsers() {
-  var accounts = readJSON('lyt_accounts', {});
-  var meta = readJSON('lyt_meta', {});
-  var names = Object.keys(accounts).sort(function (a, b) {
-    return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
-  });
-  var cur = localStorage.getItem('lyt_logged') ? localStorage.getItem('lyt_user') : null;
+  var cur = currentUser();
+  var rows = [];
+  var cloudList = (isCloud() && CLOUD.members && CLOUD.members.length) ? CLOUD.members : null;
 
-  document.getElementById('userNowAvatar').textContent = cur ? cur.charAt(0).toUpperCase() : '访';
-  document.getElementById('userNowName').textContent = cur || '未登录';
-  document.getElementById('userNowTip').textContent = cur
-    ? '已登录，退出后本账号转为离线。'
-    : '尚未登录，可在右上角登录或注册。';
+  if (cloudList) {
+    cloudList.forEach(function (m) {
+      var n = m.username || '';
+      if (!n) { return; }
+      rows.push({ name: n, title: titleOf(n), created: m.created_at, online: isOnlineName(n) });
+    });
+    if (cur && !rows.some(function (r) { return r.name.toLowerCase() === cur.toLowerCase(); })) {
+      rows.push({ name: cur, title: titleOf(cur), created: '', online: true });
+    }
+  } else {
+    var accounts = readJSON('lyt_accounts', {});
+    var meta = readJSON('lyt_meta', {});
+    Object.keys(accounts).forEach(function (n) {
+      var m = meta[n] || {};
+      rows.push({ name: n, title: titleOf(n), created: m.created, online: (n === cur) });
+    });
+  }
 
-  var badge = document.getElementById('userNowBadge');
-  badge.textContent = cur ? '在线' : '离线';
-  badge.className = 'status-pill ' + (cur ? 'is-online' : 'is-offline');
+  rows.sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
 
-  document.getElementById('userTotal').textContent = names.length;
-  document.getElementById('userOnline').textContent = cur ? 1 : 0;
-  document.getElementById('userOffline').textContent = names.length - (cur ? 1 : 0);
+  var myT = titleOf(cur) || (isOwner() ? '服主' : '');
+  var nowAvatar = document.getElementById('userNowAvatar');
+  var nowName = document.getElementById('userNowName');
+  var nowTip = document.getElementById('userNowTip');
+  var nowBadge = document.getElementById('userNowBadge');
+  if (nowAvatar) { nowAvatar.textContent = cur ? cur.charAt(0).toUpperCase() : '访'; }
+  if (nowName) { nowName.textContent = cur || '未登录'; }
+  if (nowTip) {
+    nowTip.textContent = cur
+      ? ('已登录' + (myT ? ' · 当前头衔：' + myT : ' · 暂无头衔，可联系服主 Gun7z 授予'))
+      : '尚未登录，可在右上角登录或注册。';
+  }
+  if (nowBadge) {
+    nowBadge.textContent = cur ? '在线' : '离线';
+    nowBadge.className = 'status-pill ' + (cur ? 'is-online' : 'is-offline');
+  }
+
+  var onlineCount = rows.filter(function (r) { return r.online; }).length;
+  var totalEl = document.getElementById('userTotal');
+  var onlineEl = document.getElementById('userOnline');
+  var offlineEl = document.getElementById('userOffline');
+  if (totalEl) { totalEl.textContent = rows.length; }
+  if (onlineEl) { onlineEl.textContent = onlineCount; }
+  if (offlineEl) { offlineEl.textContent = Math.max(0, rows.length - onlineCount); }
 
   var tbody = document.getElementById('userTableBody');
-  if (!names.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">本机还没有注册账号</td></tr>';
+  if (!tbody) { return; }
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">' + (cloudList ? '云端还没有成员' : '本机还没有注册账号') + '</td></tr>';
     return;
   }
-  tbody.innerHTML = names.map(function (n) {
-    var m = meta[n] || {};
-    var online = (n === cur);
+  tbody.innerHTML = rows.map(function (r) {
+    var you = cur && r.name.toLowerCase() === cur.toLowerCase();
     return '<tr>' +
-      '<td class="cell-name">' + escapeHTML(n) + (online ? '<span class="row-you">你</span>' : '') + '</td>' +
-      '<td><span class="status-pill ' + (online ? 'is-online' : 'is-offline') + '">' + (online ? '在线' : '离线') + '</span></td>' +
-      '<td>' + fmtTime(m.created) + '</td>' +
-      '<td>' + fmtTime(m.lastSeen) + '</td>' +
+      '<td class="cell-name">' + escapeHTML(r.name) + (you ? '<span class="row-you">你</span>' : '') + '</td>' +
+      '<td>' + (r.title ? '<span class="status-pill is-online">' + escapeHTML(r.title) + '</span>' : '<span class="cell-dim">—</span>') + '</td>' +
+      '<td><span class="status-pill ' + (r.online ? 'is-online' : 'is-offline') + '">' + (r.online ? '在线' : '离线') + '</span></td>' +
+      '<td>' + (r.created ? fmtTime(r.created) : '—') + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -995,7 +1049,7 @@ var OWNER = { name: 'Gun7z', pwd: 'Gun7z' };
 var TEXT_PAGES = ['home', 'about', 'contact', 'gov', 'territory', 'buildings', 'history', 'relics', 'religion', 'other'];
 var PAGE_NAMES = {
   home: '首页', about: '关于', contact: '联系', gov: '政务', territory: '领土', users: '用户',
-  officials: '官员', buildings: '建筑', history: '历史', relics: '文物', religion: '龙之心语教', other: '其他'
+  officials: '官员', buildings: '建筑', history: '历史', relics: '文物', religion: '龙语先知教', other: '其他'
 };
 /* 发布位置：导航里的全部页面，除官员页（结构化架构，不放内容）与发布/管理自身 */
 var POST_TARGETS = ['home', 'about', 'contact', 'gov', 'territory', 'users', 'buildings', 'history', 'relics', 'religion', 'other'];
@@ -1038,7 +1092,27 @@ function mergeSite(base, src) {
   return out;
 }
 
+/* 宗教改名迁移：本地草稿 / content.json / 云端里残留的旧名统一替换成「龙语先知教」 */
+function migrateReligion(pages) {
+  var olds = ['龙语心知教', '龙之心语教'], now = '龙语先知教';
+  Object.keys(pages || {}).forEach(function (k) {
+    var pg = pages[k];
+    if (!pg) { return; }
+    if (typeof pg.title === 'string') {
+      olds.forEach(function (o) { pg.title = pg.title.split(o).join(now); });
+    }
+    if (Array.isArray(pg.paragraphs)) {
+      pg.paragraphs = pg.paragraphs.map(function (x) {
+        var s = String(x);
+        olds.forEach(function (o) { s = s.split(o).join(now); });
+        return s;
+      });
+    }
+  });
+}
+
 function applyContent() {
+  migrateReligion(SITE.pages);
   TEXT_PAGES.forEach(function (id) {
     var page = SITE.pages[id];
     var block = document.querySelector('.page-block[data-id="' + id + '"]');
@@ -1252,18 +1326,27 @@ function collectTitleOptions() {
 function myTitle() {
   var u = currentUser();
   if (!u) return '';
-  if (isOwner()) return '服主';
   var list = SITE.titles || [];
   for (var i = 0; i < list.length; i++) {
     var it = list[i];
-    if (it && it.name && String(it.name).toLowerCase() === u.toLowerCase()) { return it.title || ''; }
+    if (it && it.name && String(it.name).toLowerCase() === u.toLowerCase() && it.title) { return it.title; }
   }
+  if (isOwner()) return '服主';
   return '';
 }
 
 function refreshNav() {
   var postLink = document.getElementById('navPost');
   if (postLink) { postLink.style.display = myTitle() ? '' : 'none'; }
+  /* 右上角显示当前头衔与服主标记 */
+  var tNow = myTitle();
+  var navTitle = document.getElementById('navTitle');
+  if (navTitle) {
+    navTitle.textContent = tNow;
+    navTitle.style.display = (tNow && currentUser()) ? '' : 'none';
+  }
+  var ownerTag = document.getElementById('ownerBadge');
+  if (ownerTag) { ownerTag.style.display = (currentUser() && isOwner()) ? '' : 'none'; }
   var who = document.getElementById('postWho');
   if (!who) return;
   var u = currentUser();
@@ -1443,7 +1526,13 @@ function checkLogin() {
     authBefore.style.display = 'none';
     authAfter.classList.add('show');
     navUserName.innerText = user;
+    if (navTitle) {
+      var tNow = myTitle();
+      navTitle.innerText = tNow;
+      navTitle.style.display = tNow ? '' : 'none';
+    }
   } else {
+    if (navTitle) { navTitle.innerText = ''; navTitle.style.display = 'none'; }
     authBefore.style.display = 'block';
     authAfter.classList.remove('show');
   }
@@ -2096,7 +2185,7 @@ treeExpands.forEach(function (head) {
    在管理台填好 Project URL + anon key 就切到云端模式：
    账号、发布、评论、头衔、白名单、页面正文都存在服务器，所有人实时可见。
    没填或加载失败则保持原来的本机模式。 */
-var CLOUD = { client: null, ready: false, posts: [], me: null, lastError: '' };
+var CLOUD = { client: null, ready: false, posts: [], me: null, lastError: '', syncTimer: null, members: [], online: [], pres: null };
 
 function isCloud() { return !!CLOUD.ready; }
 
@@ -2139,9 +2228,11 @@ function cloudLoadAll(cb) {
     c.from('comments').select('*').order('created_at', { ascending: true }),
     c.from('titles').select('*'),
     c.from('whitelist').select('*'),
-    c.from('pages').select('*')
+    c.from('pages').select('*'),
+    /* 全体成员：用户页的在线/离线名单靠它，换设备也能看到同一份名单 */
+    c.from('members').select('username,created_at,user_id').order('created_at', { ascending: true })
   ]).then(function (res) {
-    var ps = res[0], cs = res[1], ts = res[2], ws = res[3], gs = res[4];
+    var ps = res[0], cs = res[1], ts = res[2], ws = res[3], gs = res[4], ms = res[5];
     /* posts 读不到就当云端不可用，退回本机模式，别让页面空掉 */
     if (ps.error) {
       CLOUD.ready = false;
@@ -2167,6 +2258,7 @@ function cloudLoadAll(cb) {
         paragraphs: Array.isArray(r.paragraphs) ? r.paragraphs : SITE.pages[r.id].paragraphs
       };
     });
+    CLOUD.members = (ms && ms.data) ? ms.data : [];
     CLOUD.ready = true;
     document.documentElement.setAttribute('data-lyt-cloud', 'ready');
     afterSite();
@@ -2185,10 +2277,75 @@ function cloudRealtime() {
   if (!CLOUD.client) { return; }
   try {
     CLOUD.client.channel('lyt-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function () { cloudLoadAll(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function () { cloudLoadAll(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function () { cloudRefresh(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function () { cloudRefresh(); })
       .subscribe();
   } catch (e) {}
+  cloudSyncLoop();
+}
+
+/* 在线名单：Supabase realtime presence。谁打开着网站就在线，关掉即离线，跨设备同步 */
+function cloudPresence() {
+  if (!CLOUD.client || CLOUD.pres) { return; }
+  try {
+    CLOUD.pres = CLOUD.client.channel('lyt-online', {
+      config: { presence: { key: 'k-' + Math.random().toString(36).slice(2, 10) } }
+    });
+    CLOUD.pres.on('presence', { event: 'sync' }, function () {
+      var st = (CLOUD.pres && CLOUD.pres.presenceState()) ? CLOUD.pres.presenceState() : {};
+      var names = [];
+      Object.keys(st).forEach(function (k) {
+        (st[k] || []).forEach(function (p) {
+          if (p && p.name) {
+            var n = String(p.name);
+            var hit = names.some(function (x) { return x.toLowerCase() === n.toLowerCase(); });
+            if (!hit) { names.push(n); }
+          }
+        });
+      });
+      CLOUD.online = names;
+      document.documentElement.setAttribute('data-lyt-online', names.join(','));
+      renderUsers();
+    });
+    CLOUD.pres.subscribe(function (status) {
+      document.documentElement.setAttribute('data-lyt-presence', String(status));
+      if (status === 'SUBSCRIBED') { cloudPresenceTrack(); }
+    });
+  } catch (e) {}
+}
+
+/* 登录了就上报自己在线，退出就撤掉 */
+function cloudPresenceTrack() {
+  if (!CLOUD.pres) { return; }
+  var u = currentUser();
+  try {
+    if (u) {
+      CLOUD.pres.track({ name: u, title: titleOf(u) || '', at: new Date().toISOString() });
+    } else {
+      CLOUD.pres.untrack();
+    }
+  } catch (e) {}
+}
+
+/* 正在输入时不打断；页面在后台时不浪费请求 */
+function cloudRefresh() {
+  if (!CLOUD.client || !CLOUD.ready) { return; }
+  if (document.hidden) { return; }
+  var el = document.activeElement;
+  var tag = el && el.tagName ? el.tagName.toUpperCase() : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { return; }
+  if (document.querySelector('.modal-overlay.show')) { return; }
+  cloudLoadAll();
+}
+
+/* 实时推送之外的兜底：每 20 秒、切回标签页时各同步一次，保证别人发的东西能看到 */
+function cloudSyncLoop() {
+  if (CLOUD.syncTimer) { return; }
+  CLOUD.syncTimer = setInterval(cloudRefresh, 20000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { cloudRefresh(); }
+  });
+  window.addEventListener('focus', function () { cloudRefresh(); });
 }
 
 /* 当前登录者是谁：从 members 表取用户名，再镜像到 localStorage 让原有 UI 继续可用 */
@@ -2202,6 +2359,7 @@ function cloudLoadMe(cb) {
       localStorage.removeItem('lyt_user');
       localStorage.removeItem('lyt_role');
       checkLogin();
+      cloudPresenceTrack();
       if (cb) { cb(); }
       return;
     }
@@ -2217,6 +2375,7 @@ function cloudLoadMe(cb) {
       localStorage.setItem('lyt_role', isOwner ? 'owner' : 'member');
       touchAccount(name);
       checkLogin();
+      cloudPresenceTrack();
       if (cb) { cb(); }
     });
   });
@@ -2264,6 +2423,7 @@ function cloudSignOut() {
     localStorage.removeItem('lyt_user');
     localStorage.removeItem('lyt_role');
     checkLogin();
+    cloudPresenceTrack();
     if (String(location.hash).replace(/^#/, '') === 'admin') { location.hash = 'home'; }
   });
 }
@@ -2441,6 +2601,7 @@ function boot() {
       clearTimeout(guard);
       applyAuthMode();
       cloudRealtime();
+      cloudPresence();
       CLOUD.client.auth.getSession().then(function (s) {
         if (s.data && s.data.session) { cloudLoadMe(); }
       });
