@@ -5,8 +5,11 @@
 | 文件 | 作用 | 必须放根目录 |
 | --- | --- | --- |
 | `index.html` | 网站本体（单文件，CSS/JS 全内联） | 是 |
+| `content.json` | 站点数据：白名单、头衔、发布、页面正文、云端配置 | 是 |
+| `supabase.js` | Supabase 客户端（离线可用，加载失败才去 CDN） | 建议 |
 | `404.html` | 访问错地址时的兜底页，3 秒自动回首页 | 是 |
 | `.nojekyll` | 空白文件，关掉 Jekyll 处理，防止某些文件被吞 | 是 |
+| `supabase.sql` | 建表脚本，只粘进 Supabase，不用传仓库 | 否 |
 
 ---
 
@@ -235,3 +238,76 @@
 | 关掉注册 | 只留服主登录，成员不注册，看站点就行 | 最省事，零成本 |
 
 要哪一种，跟我说，我来改。
+---
+
+## 六、接上后端（Supabase）＋ 一键发布：从此不用手动传文件
+
+这一节做完之后：成员用**邮箱 + 密码**登录，发帖 / 评论 / 授权头衔 / 改页面正文**直接写进云端**，有人发新内容全站几秒内自动刷新，你不用再导出上传。
+
+### 6.1 开一个 Supabase 项目（免费）
+
+1. 打开 [supabase.com](https://supabase.com) → 用 GitHub 账号登录 → **New project**
+2. 名字随便（如 `lyt`），Region 选 `Northeast Asia (Tokyo)` 或 `Southeast Asia (Singapore)`，套餐选 **Free**
+3. 等 2 分钟建库完成，进项目 → 右上 **Settings → API**，抄下两个值：
+   - `Project URL`：形如 `https://xxxxxxxx.supabase.co`
+   - `anon public` key：一长串 `eyJ...`
+   - **不要**用 `service_role` key（那是管理员密钥，放前端等于把库送人）
+
+### 6.2 建表（一次复制粘贴）
+
+1. 左侧 **SQL Editor** → **New query**
+2. 把项目里 `supabase.sql` 的**全部内容**粘进去 → **Run**
+3. 没有报错就说明六张表（`members / whitelist / titles / pages / posts / comments`）、权限规则（RLS）、实时推送都建好了；末尾会预置白名单 `Gun7z`
+
+### 6.3 关掉邮箱验证（不然注册完登不上）
+
+**Authentication → Providers → Email** → 把 **Confirm email** 关掉 → Save。
+否则新注册的账号要先去邮箱点确认链接，点之前没有登录态，页面会报"注册成功但没登录"。
+
+### 6.4 填进站里
+
+1. 打开网站 → 用服主账号进**管理台** → 找到「云端设置（Supabase）」
+2. 粘贴 `Project URL` 和 `anon public` → 点 **保存云端配置** → 再点 **连通性测试**，看到绿字即通
+3. 点下面的 **发布到线上**（见 6.5），把这两个值一起写进 `content.json`，全站就都切到云端模式
+
+切过去之后，登录框自动变成「邮箱 + 密码 + 用户名」，注册时用户名必须在白名单里（服务端也会再查一次，绕不过）。
+
+### 6.5 配一次 GitHub 一键发布（以后改静态页也不用点网页）
+
+让管理台的「发布到线上」直接 commit 到仓库，需要一枚写权限 token：
+
+1. GitHub → 头像 → **Settings → Developer settings → Personal access tokens → Fine-grained tokens** → **Generate new token**
+2. Repository access 选 **Only select repositories** → 选你的网站仓库
+3. Permissions 只勾 **Contents: Read and write**（其他都不用）
+4. 生成后复制 `github_pat_...`（离开页面就看不到了）
+5. 管理台「发布到线上」填：`用户名`（如 `gun7z`）、`仓库名`（如 `lytzy`）、`分支`（`main`）、`Token` → 点 **保存** 存好，以后点 **发布到线上** 即可
+
+token 只存在你本机浏览器的 `lyt_gh` 里，不会写进 `content.json`，也不会上传到仓库。换电脑要重新填一次。
+
+### 6.6 以后怎么更新内容
+
+| 要改什么 | 怎么做 | 多久生效 |
+| --- | --- | --- |
+| 发帖 / 评论 | 站内「发布」页、各页评论区，正常点就行 | 立刻（其他人页面几秒内自动刷新） |
+| 头衔授予 / 撤销 | 管理台「头衔授权」 | 立刻 |
+| 白名单增删 | 管理台「白名单」→ 保存 | 立刻（新人下次注册时生效） |
+| 页面正文字 | 管理台「内容编辑」→ 选页面 → 保存 | 立刻 |
+| 静态页的文字 / 样式 / 新增导航页 | 改 `index.html` → 管理台「发布到线上」 | 1～2 分钟后 Pages 自动重建 |
+| 换 `404.html` / 加图片文件 | 后台改完同样「发布到线上」 | 同上 |
+
+**注意**：`content.json` 里原有的那 1 条帖子（宗教页「朝拜第一天，加油」）是切云端前的旧数据，会继续显示但评论已停用；想让它也能评论，在站内重新发一条即可，旧内容可以留着当存档。
+
+### 6.7 还需要上传这几个文件
+
+仓库根目录最终应当是这 6 个文件，一个都不能少（缺 `supabase.js` 会自动去 CDN 取，但国内网络不稳，建议一起传）：
+
+```
+index.html      网站本体
+content.json    站点初始数据 + 云端配置
+supabase.js     Supabase 客户端（219KB，本地优先，失败才走 CDN）
+404.html        错误页兜底
+.nojekyll       关掉 Jekyll
+README.md       这份说明（可以不放，不影响运行）
+```
+
+`supabase.sql` 只用来在 Supabase 里建表，**不用**传进仓库（传了也无害）。

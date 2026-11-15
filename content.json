@@ -85,5 +85,9 @@
       "time": "2026-11-15T18:33:10.413Z",
       "comments": []
     }
-  ]
+  ],
+  "cloud": {
+    "url": "https://oaagclluxvxbfzqbkepl.supabase.co",
+    "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hYWdjbGx1eHZ4YmZ6cWJrZXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3NjM0OTEsImV4cCI6MjExMDMzOTQ5MX0.5ezhm36GfRzxqKNOLxitjlQtDe5Id0m_PYFCHu0SI6c"
+  }
 }

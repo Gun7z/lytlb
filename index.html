@@ -124,6 +124,8 @@ header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); posit
 .admin-row { margin-bottom: 14px; }
 .admin-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
 .admin-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.row-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 720px) { .row-2 { grid-template-columns: minmax(0, 1fr); } }
 .btn-primary { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
 .btn-primary:hover { background: #4577d6; }
 .btn-ghost { background: var(--white); color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
@@ -179,6 +181,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <h3>登录账户</h3>
+    <input id="loginEmail" placeholder="邮箱" type="email" style="display:none">
     <input id="loginUser" placeholder="用户名" type="text">
     <input id="loginPwd" placeholder="密码" type="password">
     <div class="modal-buttons">
@@ -194,6 +197,7 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
   <div class="modal-box">
     <h3>新用户注册</h3>
     <input id="regUser" placeholder="用户名" type="text">
+    <input id="regEmail" placeholder="邮箱（用于登录）" type="email" style="display:none">
     <input id="regPwd" placeholder="密码" type="password">
     <input id="regPwd2" placeholder="确认密码" type="password">
     <div class="modal-buttons">
@@ -812,6 +816,56 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
     </div>
 
     <div class="section">
+      <h2>云端设置（Supabase）</h2>
+      <p>填好这两项，全站就改走云端：账号、发布、评论、头衔、白名单都存服务器，所有人实时可见，不用你再上传。没填则保持现在的本机模式。</p>
+      <div class="admin-row">
+        <label class="admin-label" for="cloudUrl">项目地址 Project URL</label>
+        <input id="cloudUrl" class="admin-input" type="text" placeholder="https://xxxx.supabase.co" spellcheck="false">
+      </div>
+      <div class="admin-row">
+        <label class="admin-label" for="cloudKey">anon public key</label>
+        <input id="cloudKey" class="admin-input" type="text" placeholder="eyJhbGciOi..." spellcheck="false">
+      </div>
+      <div class="admin-actions">
+        <button class="btn-primary" id="cloudSave" type="button">保存云端配置</button>
+        <button class="btn-ghost" id="cloudTest" type="button">连通性测试</button>
+        <span class="admin-hint" id="cloudHint"></span>
+      </div>
+      <p class="table-tip">anon key 是公开密钥，写进 content.json 也没关系（它只给读权限，写权限由行级安全 RLS 控制）。保存后请务必点下面的「发布到线上」，否则别的访客读不到云端配置。</p>
+    </div>
+
+    <div class="section">
+      <h2>发布到线上（GitHub）</h2>
+      <p>填一次仓库信息和访问令牌，之后点一下就把 content.json 直接提交进仓库，Pages 一分钟内自动重建，不用再下载上传。</p>
+      <div class="row-2">
+        <div class="admin-row">
+          <label class="admin-label" for="ghOwner">GitHub 用户名</label>
+          <input id="ghOwner" class="admin-input" type="text" placeholder="例如 gun7z" spellcheck="false">
+        </div>
+        <div class="admin-row">
+          <label class="admin-label" for="ghRepo">仓库名</label>
+          <input id="ghRepo" class="admin-input" type="text" placeholder="例如 lyt-federation" spellcheck="false">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="admin-row">
+          <label class="admin-label" for="ghBranch">分支</label>
+          <input id="ghBranch" class="admin-input" type="text" placeholder="main" spellcheck="false">
+        </div>
+        <div class="admin-row">
+          <label class="admin-label" for="ghToken">访问令牌 Token</label>
+          <input id="ghToken" class="admin-input" type="password" placeholder="github_pat_..." spellcheck="false">
+        </div>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-primary" id="ghPublish" type="button">发布到线上</button>
+        <button class="btn-ghost" id="ghSave" type="button">只保存配置</button>
+        <span class="admin-hint" id="ghHint"></span>
+      </div>
+      <p class="table-tip">令牌只存在这台电脑的浏览器里，不进代码、不上传仓库。请用 Fine-grained token，只勾这个仓库的 Contents: Read and write。</p>
+    </div>
+
+    <div class="section">
       <h2>导出与上传</h2>
       <p>点下面按钮下载 content.json，把它上传覆盖到仓库根目录，等 1 分钟全站生效（白名单和内容一起更新）。</p>
       <div class="admin-actions">
@@ -830,6 +884,8 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
   © 2026 LYTZYLB 洛亚提自由联邦 · 市政厅官方网站｜全职位 ID 备案系统
 </footer>
 
+<!-- Supabase 客户端：优先用同目录的 supabase.js，缺文件时自动改用 CDN；两者都拿不到就退回本机模式 -->
+<script src="supabase.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';document.head.appendChild(s);"></script>
 <script>
 /* ================= 登录注册状态 ================= */
 var authBefore = document.getElementById('auth-before');
@@ -934,7 +990,7 @@ function captureDefaults() {
   return pages;
 }
 
-var DEFAULT_SITE = { whitelist: [OWNER.name], titles: [], posts: [], pages: captureDefaults() };
+var DEFAULT_SITE = { whitelist: [OWNER.name], titles: [], posts: [], cloud: { url: '', anonKey: '' }, pages: captureDefaults() };
 var SITE = JSON.parse(JSON.stringify(DEFAULT_SITE));
 var siteReady = false;
 
@@ -944,6 +1000,7 @@ function mergeSite(base, src) {
   if (src.whitelist && src.whitelist.length) { out.whitelist = src.whitelist.slice(); }
   if (Array.isArray(src.titles)) { out.titles = JSON.parse(JSON.stringify(src.titles)); }
   if (Array.isArray(src.posts)) { out.posts = JSON.parse(JSON.stringify(src.posts)); }
+  if (src.cloud) { out.cloud = { url: String(src.cloud.url || ''), anonKey: String(src.cloud.anonKey || '') }; }
   if (src.pages) {
     Object.keys(src.pages).forEach(function (id) {
       if (!out.pages[id]) return;
@@ -974,18 +1031,18 @@ function applyContent() {
 }
 
 /* 先看本机草稿，再看仓库里的 content.json，都没有就用出厂内容 */
-function loadSite() {
+function loadSite(cb) {
   var draft = null;
   try { draft = JSON.parse(localStorage.getItem('lyt_site') || 'null'); } catch (e) { draft = null; }
   if (draft && draft.pages) {
     SITE = mergeSite(DEFAULT_SITE, draft);
-    afterSite();
+    if (cb) { cb(); }
     return;
   }
   fetch('content.json', { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) { if (d && d.pages) { SITE = mergeSite(DEFAULT_SITE, d); } afterSite(); })
-    .catch(function () { afterSite(); });
+    .then(function (d) { if (d && d.pages) { SITE = mergeSite(DEFAULT_SITE, d); } if (cb) { cb(); } })
+    .catch(function () { if (cb) { cb(); } });
 }
 
 function afterSite() {
@@ -995,6 +1052,8 @@ function afterSite() {
   renderAdmin();
   refreshNav();
   renderFeeds();
+  applyAuthMode();
+  renderCloudForm();
   route(false);
 }
 
@@ -1114,6 +1173,25 @@ function mergeComments(p) {
 
 /* 仓库里已公开的 + 本机还没公开的，按 id 去重 */
 function allPosts() {
+  if (isCloud()) {
+    var seenC = {}, outC = [];
+    CLOUD.posts.forEach(function (p) {
+      if (!p || !p.id || seenC[p.id]) { return; }
+      seenC[p.id] = 1;
+      outC.push(p);
+    });
+    (SITE.posts || []).forEach(function (p) {
+      if (!p || !p.id || seenC[p.id]) { return; }
+      seenC[p.id] = 1;
+      outC.push({
+        id: p.id, author: p.author, title: p.title, pos: p.pos || 'home',
+        text: p.text, image: p.image, time: p.time,
+        comments: Array.isArray(p.comments) ? p.comments : []
+      });
+    });
+    outC.sort(function (a, b) { return String(b.time || '').localeCompare(String(a.time || '')); });
+    return outC;
+  }
   var base = (SITE.posts || []).slice();
   var mine = localPosts();
   var seen = {}, list = [];
@@ -1209,6 +1287,8 @@ function postPosLabel(p) {
 }
 
 /* 评论列表 + 评论框；未登录只给提示 */
+function isUuid(s) { return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(String(s)); }
+
 function commentsHTML(p) {
   var list = (p.comments || []).map(function (c) {
     return '<div class="cmt-item">' +
@@ -1218,12 +1298,13 @@ function commentsHTML(p) {
       '</div>';
   }).join('');
   if (!list) { list = '<p class="cmt-empty">还没有评论</p>'; }
-  var form = currentUser()
+  var canComment = !!currentUser() && !(isCloud() && !isUuid(p.id));
+  var form = canComment
     ? '<form class="cmt-form" data-post-id="' + escapeHTML(p.id) + '">' +
         '<input class="cmt-input" type="text" maxlength="200" placeholder="说点什么…" aria-label="评论内容">' +
         '<button class="btn-primary cmt-btn" type="submit">评论</button>' +
       '</form>'
-    : '<p class="cmt-tip">登录后可以评论。</p>';
+    : '<p class="cmt-tip">' + (currentUser() ? '这条是旧版发布，评论已停用。' : '登录后可以评论。') + '</p>';
   return '<div class="cmt-wrap">' + list + form + '</div>';
 }
 
@@ -1365,6 +1446,7 @@ document.addEventListener('submit', function (e) {
   if (!text) { if (input) { input.focus(); } return; }
   var pid = f.getAttribute('data-post-id');
   if (!pid) return;
+  if (isCloud()) { cloudAddComment(pid, text); if (input) { input.value = ''; } return; }
   var m = localComments();
   m[pid] = (m[pid] || []).concat([{
     id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6),
@@ -1390,6 +1472,7 @@ document.getElementById('regSubmit').onclick = function () {
   var p2 = document.getElementById('regPwd2').value;
   if (!u || !p) { alert('用户名和密码不能为空'); return; }
   if (p !== p2) { alert('两次密码不一致'); return; }
+  if (isCloud()) { cloudSignUp(u, document.getElementById('regEmail').value.trim(), p); return; }
   var wl = (SITE.whitelist || []).map(function (s) { return String(s).trim().toLowerCase(); });
   if (wl.indexOf(u.toLowerCase()) === -1) {
     alert('「' + u + '」不在账号白名单内，请联系服主 Gun7z 添加后再注册');
@@ -1415,6 +1498,7 @@ document.getElementById('regSubmit').onclick = function () {
 document.getElementById('loginSubmit').onclick = function () {
   var u = document.getElementById('loginUser').value.trim();
   var p = document.getElementById('loginPwd').value;
+  if (isCloud()) { cloudSignIn(document.getElementById('loginEmail').value.trim(), p); return; }
   var accounts = readJSON('lyt_accounts', {});
 
   /* 服主登录：不要求在本地注册过 */
@@ -1441,6 +1525,7 @@ document.getElementById('loginSubmit').onclick = function () {
 
 /* 退出 */
 document.getElementById('logoutBtn').onclick = function () {
+  if (isCloud()) { cloudSignOut(); return; }
   localStorage.removeItem('lyt_logged');
   localStorage.removeItem('lyt_user');
   localStorage.removeItem('lyt_role');
@@ -1600,6 +1685,14 @@ treeExpands.forEach(function (head) {
       SITE.whitelist = out;
       ta.value = out.join('\n');
       ta.dataset.touched = '1';
+      if (isCloud()) {
+        cloudSaveWhitelist(out, function () {
+          var h = document.getElementById('wlHint');
+          h.className = 'admin-hint';
+          h.textContent = '已保存到云端，共 ' + out.length + ' 个名字，全站立即生效';
+        });
+        return;
+      }
       saveDraft();
       var hint = document.getElementById('wlHint');
       hint.className = 'admin-hint';
@@ -1624,6 +1717,14 @@ treeExpands.forEach(function (head) {
       var ps = document.getElementById('bodyInput').value.split('\n')
         .map(function (s) { return s.trim(); })
         .filter(function (s) { return s.length > 0; });
+      if (isCloud()) {
+        cloudSavePage(id, title, ps, function () {
+          var h = document.getElementById('contentHint');
+          h.className = 'admin-hint';
+          h.textContent = '已保存到云端「' + PAGE_NAMES[id] + '」，全站立即生效';
+        });
+        return;
+      }
       SITE.pages[id] = { title: title, paragraphs: ps };
       applyContent();
       saveDraft();
@@ -1645,18 +1746,11 @@ treeExpands.forEach(function (head) {
   var exportBtn = document.getElementById('exportBtn');
   if (exportBtn) {
     exportBtn.addEventListener('click', function () {
-      var data = {
-        version: 2,
-        updated: nowISO(),
-        whitelist: SITE.whitelist,
-        titles: SITE.titles || [],
-        pages: SITE.pages,
-        posts: allPosts()
-      };
+      var data = buildContentJSON();
       downloadJSON(data, 'content.json');
       var hint = document.getElementById('exportHint');
       hint.className = 'admin-hint';
-      hint.textContent = '已导出：白名单 ' + SITE.whitelist.length + ' 个、头衔 ' + (SITE.titles || []).length + ' 个、发布 ' + allPosts().length + ' 条（含评论）、内容页 ' + Object.keys(SITE.pages).length + ' 个';
+      hint.textContent = '已导出：云端配置、白名单 ' + SITE.whitelist.length + ' 个、头衔 ' + (SITE.titles || []).length + ' 个、内容页 ' + Object.keys(SITE.pages).length + ' 个' + (isCloud() ? '（发布与评论在云端，不写进文件）' : '、发布 ' + allPosts().length + ' 条');
     });
   }
 
@@ -1676,6 +1770,14 @@ treeExpands.forEach(function (head) {
       var name = document.getElementById('grantName').value.trim();
       var title = document.getElementById('grantTitle').value;
       if (!name || !title) { alert('请填写账号名并选择头衔'); return; }
+      if (isCloud()) {
+        cloudSetTitle(name, title, function () {
+          renderGrants();
+          refreshNav();
+          document.getElementById('grantName').value = '';
+        });
+        return;
+      }
       SITE.titles = SITE.titles || [];
       var existed = null;
       SITE.titles.forEach(function (it) {
@@ -1752,6 +1854,24 @@ treeExpands.forEach(function (head) {
       var img = pendingImage || safeImageUrl(document.getElementById('postLink').value);
       var pos = document.getElementById('postTarget').value || 'home';
       if (POST_TARGETS.indexOf(pos) === -1) { pos = 'home'; }
+      if (isCloud()) {
+        hint.className = 'admin-hint';
+        hint.textContent = '正在发布…';
+        cloudAddPost({
+          author: currentUser() || '匿名', title: t, pos: pos, text: text, image: img
+        }, function (ok) {
+          if (!ok) { hint.className = 'admin-hint warn'; hint.textContent = '发布失败，看浏览器弹窗里的原因'; return; }
+          document.getElementById('postText').value = '';
+          document.getElementById('postLink').value = '';
+          pendingImage = '';
+          document.getElementById('imgPreview').style.display = 'none';
+          document.getElementById('imgNote').textContent = '';
+          document.getElementById('postTime').value = fmtTime(nowISO());
+          hint.className = 'admin-hint';
+          hint.textContent = '已发布到「' + PAGE_NAMES[pos] + '」，已同步到云端，所有人现在就能看到';
+        });
+        return;
+      }
       var list = localPosts();
       list.unshift({
         id: 'p' + Date.now(),
@@ -1780,6 +1900,12 @@ treeExpands.forEach(function (head) {
   var postExport = document.getElementById('postExport');
   if (postExport) {
     postExport.addEventListener('click', function () {
+      var hint = document.getElementById('postHint');
+      if (isCloud()) {
+        hint.className = 'admin-hint';
+        hint.textContent = '云端模式下发布已经所有人可见，不需要再导出';
+        return;
+      }
       downloadJSON({ version: 1, exported: nowISO(), author: currentUser(), posts: localPosts() }, 'posts.json');
       var hint = document.getElementById('postHint');
       hint.className = 'admin-hint';
@@ -1795,6 +1921,7 @@ treeExpands.forEach(function (head) {
       if (!b) return;
       var id = b.getAttribute('data-post-del');
       if (!confirm('删除这条发布？')) return;
+      if (isCloud()) { cloudDeletePost(id); return; }
       SITE.posts = (SITE.posts || []).filter(function (p) { return p.id !== id; });
       saveLocalPosts(localPosts().filter(function (p) { return p.id !== id; }));
       var cm = localComments();
@@ -1816,6 +1943,20 @@ treeExpands.forEach(function (head) {
         try { data = JSON.parse(e.target.result); } catch (err) { alert('不是合法的 JSON 文件'); return; }
         var incoming = (data && Array.isArray(data.posts)) ? data.posts : (Array.isArray(data) ? data : []);
         if (!incoming.length) { alert('文件里没有 posts'); return; }
+        if (isCloud()) {
+          CLOUD.client.from('posts').insert(incoming.map(function (p) {
+            return {
+              author: p.author || '匿名', author_title: p.title || '',
+              pos: p.pos || 'home', body: p.text || '', image: p.image || ''
+            };
+          })).then(function (r) {
+            if (r.error) { alert('导入失败：' + r.error.message); return; }
+            cloudLoadAll();
+            alert('已导入 ' + incoming.length + ' 条到云端');
+            postsImport.value = '';
+          });
+          return;
+        }
         SITE.posts = SITE.posts || [];
         var seen = {};
         SITE.posts.forEach(function (p) { if (p && p.id) { seen[p.id] = 1; } });
@@ -1848,12 +1989,435 @@ treeExpands.forEach(function (head) {
       r.readAsText(f, 'utf-8');
     });
   }
+
+  /* ---- 云端设置 ---- */
+  var cloudSave = document.getElementById('cloudSave');
+  if (cloudSave) {
+    cloudSave.addEventListener('click', function () {
+      var url = document.getElementById('cloudUrl').value.trim().replace(/\/+$/, '');
+      var key = document.getElementById('cloudKey').value.trim();
+      var hint = document.getElementById('cloudHint');
+      if (!url || !key) { hint.className = 'admin-hint warn'; hint.textContent = '两项都要填'; return; }
+      SITE.cloud = { url: url, anonKey: key };
+      saveDraft();
+      hint.className = 'admin-hint';
+      hint.textContent = '已保存到本机草稿；点「发布到线上」后全体访客生效，刷新页面即切到云端模式';
+    });
+  }
+
+  var cloudTest = document.getElementById('cloudTest');
+  if (cloudTest) {
+    cloudTest.addEventListener('click', function () {
+      var url = document.getElementById('cloudUrl').value.trim().replace(/\/+$/, '');
+      var key = document.getElementById('cloudKey').value.trim();
+      var hint = document.getElementById('cloudHint');
+      if (!url || !key) { hint.className = 'admin-hint warn'; hint.textContent = '两项都要填'; return; }
+      hint.className = 'admin-hint';
+      hint.textContent = '正在测试…';
+      fetch(url + '/rest/v1/posts?select=id&limit=1', { headers: { apikey: key, Authorization: 'Bearer ' + key } })
+        .then(function (r) {
+          return r.text().then(function (t) {
+            hint.className = 'admin-hint' + (r.ok ? '' : ' warn');
+            hint.textContent = r.ok ? '连上了，posts 表可以读' : ('连接失败 ' + r.status + '：' + String(t).slice(0, 120));
+          });
+        })
+        .catch(function (e) {
+          hint.className = 'admin-hint warn';
+          hint.textContent = '连接失败：' + e.message;
+        });
+    });
+  }
+
+  /* ---- GitHub 一键发布 ---- */
+  function readGhForm() {
+    return {
+      owner: document.getElementById('ghOwner').value.trim(),
+      repo: document.getElementById('ghRepo').value.trim(),
+      branch: document.getElementById('ghBranch').value.trim() || 'main',
+      token: document.getElementById('ghToken').value.trim()
+    };
+  }
+
+  var ghSave = document.getElementById('ghSave');
+  if (ghSave) {
+    ghSave.addEventListener('click', function () {
+      var g = readGhForm();
+      try { localStorage.setItem('lyt_gh', JSON.stringify(g)); } catch (e) {}
+      var hint = document.getElementById('ghHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '配置已存在这台电脑的浏览器里' + (g.token ? '' : '（还没填令牌）');
+    });
+  }
+
+  var ghBtn = document.getElementById('ghPublish');
+  if (ghBtn) {
+    ghBtn.addEventListener('click', function () {
+      var g = readGhForm();
+      try { localStorage.setItem('lyt_gh', JSON.stringify(g)); } catch (e) {}
+      var hint = document.getElementById('ghHint');
+      hint.className = 'admin-hint';
+      hint.textContent = '正在提交到 GitHub…';
+      ghPublish(function (msg, ok) {
+        hint.className = 'admin-hint' + (ok ? '' : ' warn');
+        hint.textContent = msg;
+      });
+    });
+  }
 })();
 
+/* ================= 云端（Supabase） =================
+   在管理台填好 Project URL + anon key 就切到云端模式：
+   账号、发布、评论、头衔、白名单、页面正文都存在服务器，所有人实时可见。
+   没填或加载失败则保持原来的本机模式。 */
+var CLOUD = { client: null, ready: false, posts: [], me: null, lastError: '' };
+
+function isCloud() { return !!CLOUD.ready; }
+
+function cloudCfg() {
+  var c = (SITE && SITE.cloud) || {};
+  return { url: String(c.url || '').trim(), key: String(c.anonKey || '').trim() };
+}
+
+function cloudErr(r) { return (r && r.error && r.error.message) ? r.error.message : ''; }
+
+function rowToPost(r, cs) {
+  return {
+    id: String(r.id),
+    author: r.author || '匿名',
+    title: r.author_title || '',
+    pos: r.pos || 'home',
+    text: r.body || '',
+    image: r.image || '',
+    time: r.created_at,
+    comments: (cs || []).map(function (c) {
+      return { id: String(c.id), author: c.author || '匿名', text: c.body || '', time: c.created_at };
+    })
+  };
+}
+
+/* 一次性拉全：帖子 / 评论 / 头衔 / 白名单 / 页面正文 */
+function cloudLoadAll(cb) {
+  if (!CLOUD.client) { if (cb) { cb(); } return; }
+  var c = CLOUD.client;
+  Promise.all([
+    c.from('posts').select('*').order('created_at', { ascending: false }),
+    c.from('comments').select('*').order('created_at', { ascending: true }),
+    c.from('titles').select('*'),
+    c.from('whitelist').select('*'),
+    c.from('pages').select('*')
+  ]).then(function (res) {
+    var ps = res[0], cs = res[1], ts = res[2], ws = res[3], gs = res[4];
+    /* posts 读不到就当云端不可用，退回本机模式，别让页面空掉 */
+    if (ps.error) {
+      CLOUD.ready = false;
+      CLOUD.lastError = cloudErr(ps) || '云端读取失败';
+      document.documentElement.setAttribute('data-lyt-cloud', 'fail:' + CLOUD.lastError);
+      afterSite();
+      if (cb) { cb(); }
+      return;
+    }
+    if (cs.error) { CLOUD.lastError = cloudErr(cs); }
+    var byPost = {};
+    (cs.data || []).forEach(function (r) {
+      var k = String(r.post_id);
+      (byPost[k] = byPost[k] || []).push(r);
+    });
+    CLOUD.posts = (ps.data || []).map(function (r) { return rowToPost(r, byPost[String(r.id)]); });
+    if (ts.data) { SITE.titles = ts.data.map(function (r) { return { name: r.name, title: r.title }; }); }
+    if (ws.data) { SITE.whitelist = ws.data.map(function (r) { return r.name; }); }
+    (gs.data || []).forEach(function (r) {
+      if (!SITE.pages[r.id]) { return; }
+      SITE.pages[r.id] = {
+        title: r.title || SITE.pages[r.id].title,
+        paragraphs: Array.isArray(r.paragraphs) ? r.paragraphs : SITE.pages[r.id].paragraphs
+      };
+    });
+    CLOUD.ready = true;
+    document.documentElement.setAttribute('data-lyt-cloud', 'ready');
+    afterSite();
+    if (cb) { cb(); }
+  }).catch(function (e) {
+    CLOUD.ready = false;
+    CLOUD.lastError = e && e.message;
+    document.documentElement.setAttribute('data-lyt-cloud', 'fail:' + (CLOUD.lastError || 'unknown'));
+    afterSite();
+    if (cb) { cb(); }
+  });
+}
+
+/* 有新帖 / 新评论就自动刷新，不用手动刷页面 */
+function cloudRealtime() {
+  if (!CLOUD.client) { return; }
+  try {
+    CLOUD.client.channel('lyt-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function () { cloudLoadAll(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function () { cloudLoadAll(); })
+      .subscribe();
+  } catch (e) {}
+}
+
+/* 当前登录者是谁：从 members 表取用户名，再镜像到 localStorage 让原有 UI 继续可用 */
+function cloudLoadMe(cb) {
+  if (!CLOUD.client) { if (cb) { cb(); } return; }
+  CLOUD.client.auth.getUser().then(function (u) {
+    var em = (u.data && u.data.user) ? u.data.user : null;
+    if (!em) {
+      CLOUD.me = null;
+      localStorage.removeItem('lyt_logged');
+      localStorage.removeItem('lyt_user');
+      localStorage.removeItem('lyt_role');
+      checkLogin();
+      if (cb) { cb(); }
+      return;
+    }
+    CLOUD.client.from('members').select('*').then(function (r) {
+      var row = (r.data && r.data[0]) || null;
+      var name = (row && row.username) || (em.user_metadata && em.user_metadata.username) || String(em.email || '').split('@')[0];
+      CLOUD.me = { username: name };
+      localStorage.setItem('lyt_logged', '1');
+      localStorage.setItem('lyt_user', name);
+      localStorage.setItem('lyt_role', name === OWNER.name ? 'owner' : 'member');
+      touchAccount(name);
+      checkLogin();
+      if (cb) { cb(); }
+    });
+  });
+}
+
+function cloudSignIn(email, pwd) {
+  if (!email || !pwd) { alert('请填写邮箱和密码'); return; }
+  CLOUD.client.auth.signInWithPassword({ email: email, password: pwd }).then(function (r) {
+    if (r.error) { alert('登录失败：' + r.error.message); return; }
+    loginModal.classList.remove('show');
+    cloudLoadMe();
+  });
+}
+
+function cloudSignUp(u, email, pwd) {
+  if (!email) { alert('请填写邮箱（用于登录）'); return; }
+  var wl = (SITE.whitelist || []).map(function (s) { return String(s).trim().toLowerCase(); });
+  if (wl.indexOf(u.toLowerCase()) === -1) {
+    alert('「' + u + '」不在账号白名单内，请联系服主 Gun7z 添加后再注册');
+    return;
+  }
+  CLOUD.client.auth.signUp({
+    email: email,
+    password: pwd,
+    options: { data: { username: u } }
+  }).then(function (r) {
+    if (r.error) { alert('注册失败：' + r.error.message); return; }
+    if (!r.data.session) {
+      alert('注册成功，请到邮箱点确认链接后再登录（也可在 Supabase 关掉邮箱确认）');
+      regModal.classList.remove('show');
+      return;
+    }
+    CLOUD.client.from('members').insert({ username: u }).then(function (m) {
+      if (m.error) { alert('账号已创建，但档案写入失败：' + m.error.message); }
+      regModal.classList.remove('show');
+      cloudLoadMe();
+    });
+  });
+}
+
+function cloudSignOut() {
+  CLOUD.client.auth.signOut().then(function () {
+    CLOUD.me = null;
+    localStorage.removeItem('lyt_logged');
+    localStorage.removeItem('lyt_user');
+    localStorage.removeItem('lyt_role');
+    checkLogin();
+    if (String(location.hash).replace(/^#/, '') === 'admin') { location.hash = 'home'; }
+  });
+}
+
+function cloudAddPost(p, cb) {
+  CLOUD.client.from('posts').insert({
+    author: p.author, author_title: p.title, pos: p.pos, body: p.text, image: p.image || ''
+  }).then(function (r) {
+    if (r.error) { alert('发布失败：' + r.error.message); if (cb) { cb(false); } return; }
+    cloudLoadAll(function () { if (cb) { cb(true); } });
+  });
+}
+
+function cloudAddComment(pid, text) {
+  var u = currentUser();
+  if (!u) { alert('请先登录后再评论'); return; }
+  CLOUD.client.from('comments').insert({ post_id: pid, author: u, body: text }).then(function (r) {
+    if (r.error) { alert('评论失败：' + r.error.message); return; }
+    cloudLoadAll();
+  });
+}
+
+function cloudSetTitle(name, title, cb) {
+  CLOUD.client.from('titles').upsert({ name: name, title: title }).then(function (r) {
+    if (r.error) { alert('授予失败：' + r.error.message); if (cb) { cb(false); } return; }
+    cloudLoadAll(function () { if (cb) { cb(true); } });
+  });
+}
+
+function cloudDropTitle(name, cb) {
+  CLOUD.client.from('titles').delete().eq('name', name).then(function (r) {
+    if (r.error) { alert('撤销失败：' + r.error.message); if (cb) { cb(false); } return; }
+    cloudLoadAll(function () { if (cb) { cb(true); } });
+  });
+}
+
+function cloudSaveWhitelist(list, cb) {
+  var c = CLOUD.client;
+  c.from('whitelist').delete().neq('name', '__none__').then(function () {
+    if (!list.length) { cloudLoadAll(function () { if (cb) { cb(true); } }); return; }
+    c.from('whitelist').insert(list.map(function (n) { return { name: n }; })).then(function (r) {
+      if (r.error) { alert('保存白名单失败：' + r.error.message); if (cb) { cb(false); } return; }
+      cloudLoadAll(function () { if (cb) { cb(true); } });
+    });
+  });
+}
+
+function cloudSavePage(id, title, paragraphs, cb) {
+  CLOUD.client.from('pages').upsert({ id: id, title: title, paragraphs: paragraphs }).then(function (r) {
+    if (r.error) { alert('保存失败：' + r.error.message); if (cb) { cb(false); } return; }
+    cloudLoadAll(function () { if (cb) { cb(true); } });
+  });
+}
+
+function cloudDeletePost(id, cb) {
+  CLOUD.client.from('posts').delete().eq('id', id).then(function (r) {
+    if (r.error) { alert('删除失败：' + r.error.message); if (cb) { cb(false); } return; }
+    cloudLoadAll(function () { if (cb) { cb(true); } });
+  });
+}
+
+/* 云端模式下登录框换成邮箱、注册框多一个邮箱 */
+function applyAuthMode() {
+  var cloud = isCloud();
+  var le = document.getElementById('loginEmail');
+  var lu = document.getElementById('loginUser');
+  var re = document.getElementById('regEmail');
+  if (le) { le.style.display = cloud ? '' : 'none'; }
+  if (lu) { lu.style.display = cloud ? 'none' : ''; }
+  if (re) { re.style.display = cloud ? '' : 'none'; }
+}
+
+/* ================= 一键发布到 GitHub ================= */
+function ghCfg() {
+  var d = readJSON('lyt_gh', {});
+  return {
+    owner: String(d.owner || '').trim(),
+    repo: String(d.repo || '').trim(),
+    branch: String(d.branch || 'main').trim() || 'main',
+    token: String(d.token || '').trim()
+  };
+}
+
+function b64utf8(s) { return btoa(unescape(encodeURIComponent(s))); }
+
+function buildContentJSON() {
+  return {
+    version: 2,
+    updated: nowISO(),
+    cloud: SITE.cloud || { url: '', anonKey: '' },
+    whitelist: SITE.whitelist,
+    titles: SITE.titles || [],
+    pages: SITE.pages,
+    posts: isCloud() ? [] : allPosts()
+  };
+}
+
+/* 直接把 content.json 提交进仓库，Pages 自动重建 */
+function ghPublish(cb) {
+  var g = ghCfg();
+  if (!g.owner || !g.repo || !g.token) { if (cb) { cb('请先填 GitHub 用户名、仓库名和令牌', false); } return; }
+  var api = 'https://api.github.com/repos/' + g.owner + '/' + g.repo + '/contents/content.json';
+  var headers = { Authorization: 'Bearer ' + g.token, Accept: 'application/vnd.github+json' };
+  fetch(api + '?ref=' + encodeURIComponent(g.branch), { headers: headers, cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (meta) {
+      return fetch(api, {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({
+          message: '更新站点内容 ' + fmtTime(nowISO()),
+          content: b64utf8(JSON.stringify(buildContentJSON(), null, 2)),
+          sha: (meta && meta.sha) ? meta.sha : undefined,
+          branch: g.branch
+        })
+      });
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.commit) { if (cb) { cb('已提交到 ' + g.owner + '/' + g.repo + '，Pages 约 1 分钟后重建完成', true); } }
+      else { if (cb) { cb('提交失败：' + ((d && d.message) || '未知错误'), false); } }
+    })
+    .catch(function (e) { if (cb) { cb('提交失败：' + e.message + '（检查令牌权限或网络）', false); } });
+}
+
+function renderCloudForm() {
+  if (!siteReady) { return; }
+  var cu = document.getElementById('cloudUrl');
+  var ck = document.getElementById('cloudKey');
+  if (cu && cu.value === '') { cu.value = (SITE.cloud && SITE.cloud.url) || ''; }
+  if (ck && ck.value === '') { ck.value = (SITE.cloud && SITE.cloud.anonKey) || ''; }
+  var g = ghCfg();
+  var f1 = document.getElementById('ghOwner');
+  var f2 = document.getElementById('ghRepo');
+  var f3 = document.getElementById('ghBranch');
+  var f4 = document.getElementById('ghToken');
+  if (f1 && f1.value === '') { f1.value = g.owner; }
+  if (f2 && f2.value === '') { f2.value = g.repo; }
+  if (f3 && f3.value === '') { f3.value = g.branch; }
+  if (f4 && f4.value === '') { f4.value = g.token; }
+}
+
+/* ================= 启动 ================= */
+function boot() {
+  checkLogin();
+  route(false);
+  loadSite(function () {
+    var cfg = cloudCfg();
+    if (!window.supabase || !cfg.url || !cfg.key) {
+      applyAuthMode();
+      afterSite();
+      return;
+    }
+    try {
+      CLOUD.client = window.supabase.createClient(cfg.url, cfg.key);
+    } catch (e) {
+      CLOUD.client = null;
+      applyAuthMode();
+      afterSite();
+      return;
+    }
+    /* 云端连不上/太慢时别把页面卡在半成品状态：6 秒后退回本机模式 */
+    var guard = setTimeout(function () {
+      if (!siteReady) {
+        CLOUD.ready = false;
+        if (!CLOUD.lastError) { CLOUD.lastError = '云端响应超时，已退回本机模式'; }
+        afterSite();
+      }
+    }, 6000);
+
+    cloudLoadAll(function () {
+      clearTimeout(guard);
+      applyAuthMode();
+      cloudRealtime();
+      CLOUD.client.auth.getSession().then(function (s) {
+        if (s.data && s.data.session) { cloudLoadMe(); }
+      });
+    });
+  });
+}
+
 /* ================= 初始化 ================= */
-checkLogin();
-route(false);
-loadSite();
+boot();
+
+/* 排查用：控制台输入 __LYT 可看云端状态与当前数据，不影响功能 */
+window.__LYT = {
+  cloud: CLOUD,
+  isCloud: isCloud,
+  cfg: cloudCfg,
+  allPosts: allPosts,
+  site: function () { return SITE; }
+};
 </script>
 </body>
 </html>
