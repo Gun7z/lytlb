@@ -1,1 +1,4916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Gun7z的一天 · 洛亚提办公厅</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;900&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bone:#e8dfc9;
+    --bone-dim:#9aa091;
+    --moss:#7d9b62;
+    --red:#b4462f;
+    --serif:"Noto Serif SC","Songti SC",serif;
+    --mono:"Roboto Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:#000;overflow:hidden}
+  body{font-family:var(--serif);color:var(--bone)}
 
+  #cv{position:fixed;inset:0;width:100%;height:100%;display:block;background:#000;touch-action:none}
+
+  /* ---------- 首屏：接听 ---------- */
+  #igate{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;text-align:center;padding:6vh 24px;
+    background:radial-gradient(120% 80% at 50% 45%,rgba(30,44,34,.55),#000 72%);
+    transition:opacity .75s ease}
+  #igate.hide{opacity:0;pointer-events:none}
+  #igate .g-sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.34em;color:var(--moss);opacity:.85}
+  #igate h2{margin:0;font-size:clamp(26px,8vw,46px);font-weight:900;letter-spacing:.14em;
+    text-shadow:0 0 26px rgba(180,70,47,.28)}
+  #igate .g-line{margin:0;font-size:13px;line-height:2;color:var(--bone-dim);opacity:.9}
+  #iplay{margin-top:6px;font-family:var(--serif);font-size:17px;letter-spacing:.3em;color:var(--bone);
+    background:linear-gradient(180deg,rgba(52,72,54,.55),rgba(24,34,26,.75));
+    border:1px solid rgba(125,155,98,.55);border-radius:6px;padding:14px 40px;cursor:pointer;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.6)}
+  #iplay:active{transform:translateY(1px);border-color:var(--moss)}
+  #igate .g-note{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:#6f766a;margin-top:4px}
+
+  /* ---------- 结束提示 ---------- */
+  #tip{position:fixed;left:0;right:0;bottom:calc(10% + env(safe-area-inset-bottom,0px));z-index:9;
+    text-align:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.26em;color:#9aa091;
+    opacity:0;transition:opacity .8s ease;pointer-events:none}
+  #tip.on{opacity:1;animation:breath 2.8s ease-in-out infinite}
+  @keyframes breath{0%,100%{opacity:.45}50%{opacity:.9}}
+
+  @media (prefers-reduced-motion:reduce){
+    #tip.on{animation:none;opacity:.8}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+
+<div id="igate">
+  <div class="g-sub">序 · 03:47</div>
+  <h2>洛亚提办公厅</h2>
+  <p class="g-line">凌晨三点四十七分。铃声响起，手机在桌上亮着。<br>
+    来电显示是你自己的号码。<br>
+    你按下接听——窗外的雨停在半空，一粒一粒，变成方块。</p>
+  <button id="iplay" type="button">拿 起 手 机</button>
+  <div class="g-note">他是谁？</div>
+</div>
+
+
+<div id="tip">轻触屏幕 · 重播</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  var RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var SERIF = '"Noto Serif SC","Songti SC",serif';
+  var MONO = '"Roboto Mono",Consolas,monospace';
+
+  /* 时间轴（毫秒） */
+  var TL = {
+    wake:   800,    // 手机亮起
+    banner: 1500,   // 来电横幅
+    answer: 2500,   // 接通
+    hangup: 9200,   // 熄屏
+    title:  9600,   // 标题
+    end:    13200   // 结束，出重播提示
+  };
+
+  /* ---------------- 基础工具 ---------------- */
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function ease(t) { return 1 - Math.pow(1 - clamp01(t), 3); }
+  function lerp(a, b, t) { return a + (b - a) * clamp01(t); }
+  function hash(n) { var x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
+
+  function rr(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+
+  function vignette(a) {
+    var g = ctx.createRadialGradient(W / 2, H * 0.46, Math.min(W, H) * 0.26, W / 2, H * 0.46, Math.max(W, H) * 0.8);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,' + a + ')');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function grain(ms) {
+    if (RM) return;
+    for (var i = 0; i < 40; i++) {
+      var x = hash(i + ms * 0.02) * W;
+      var y = hash(i * 2.7 + ms * 0.017) * H;
+      ctx.fillStyle = 'rgba(228,234,220,' + (0.02 + hash(i * 9.1) * 0.05).toFixed(3) + ')';
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  /* ---------------- 空气里的尘埃 ---------------- */
+  var dust = [];
+  function seedDust() {
+    dust = [];
+    var n = Math.min(90, Math.round(W * H / 20000));
+    for (var i = 0; i < n; i++) {
+      dust.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 0.6 + Math.random() * 1.5,
+        v: 0.02 + Math.random() * 0.07,
+        p: Math.random() * 6.28,
+        a: 0.05 + Math.random() * 0.15
+      });
+    }
+  }
+  function drawDust(ms, a) {
+    if (a <= 0.02) return;
+    for (var i = 0; i < dust.length; i++) {
+      var d = dust[i];
+      var y = d.y - ms * d.v * 0.001 * 60;
+      y = ((y % H) + H) % H;
+      var x = d.x + Math.sin(ms / 2600 + d.p) * 10;
+      ctx.fillStyle = 'rgba(196,206,186,' + (d.a * a).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(x, y, d.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  /* ---------------- 手机 ---------------- */
+  // 画机身与屏幕，屏幕内容交给回调，坐标为屏幕自身中心
+  function phoneFrame(cx, cy, w, tilt, mine, glow, fn) {
+    var h = w * 2.04;
+    var sw = w * 0.92, sh = h * 0.955;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt);
+
+    // 机身背后的屏幕溢光
+    var g = ctx.createRadialGradient(0, 0, 0, 0, 0, w * 2.1);
+    g.addColorStop(0, 'rgba(74,100,78,' + (0.20 * glow).toFixed(3) + ')');
+    g.addColorStop(0.45, 'rgba(48,66,52,' + (0.06 * glow).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-w * 2.1, -w * 2.1, w * 4.2, w * 4.2);
+
+    // 机身
+    var body = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    body.addColorStop(0, '#191d1e');
+    body.addColorStop(0.12, '#0e1213');
+    body.addColorStop(1, '#040607');
+    rr(-w / 2, -h / 2, w, h, w * 0.086);
+    ctx.fillStyle = body;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(198,208,194,.14)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 屏幕
+    rr(-sw / 2, -sh / 2, sw, sh, w * 0.066);
+    ctx.fillStyle = '#040706';
+    ctx.fill();
+
+    ctx.save();
+    rr(-sw / 2, -sh / 2, sw, sh, w * 0.066);
+    ctx.clip();
+    fn(sw, sh);
+    // 屏幕亮度（熄屏时为黑）
+    if (mine < 1) {
+      ctx.fillStyle = 'rgba(0,0,0,' + (1 - mine).toFixed(3) + ')';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+    }
+    ctx.restore();
+
+    // 玻璃反光
+    var rf = ctx.createLinearGradient(-sw / 2, -sh / 2, sw / 2, sh * 0.35);
+    rf.addColorStop(0, 'rgba(224,232,218,.075)');
+    rf.addColorStop(0.34, 'rgba(224,232,218,0)');
+    rf.addColorStop(1, 'rgba(224,232,218,0)');
+    rr(-sw / 2, -sh / 2, sw, sh, w * 0.066);
+    ctx.fillStyle = rf;
+    ctx.fill();
+
+    // 刘海
+    ctx.fillStyle = '#080b0a';
+    rr(-w * 0.14, -sh / 2 + w * 0.016, w * 0.28, w * 0.044, w * 0.022);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(120,140,120,.18)';
+    ctx.beginPath();
+    ctx.arc(w * 0.065, -sh / 2 + w * 0.038, w * 0.014, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* ---------------- 镜头一：锁屏，来电 ---------------- */
+  function drawLock(sw, sh, t) {
+    var bg = ctx.createLinearGradient(0, -sh / 2, 0, sh / 2);
+    bg.addColorStop(0, '#0c1311');
+    bg.addColorStop(0.55, '#070b09');
+    bg.addColorStop(1, '#040706');
+    ctx.fillStyle = bg;
+    ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 锁屏时间
+    var ts = Math.min(sw * 0.26, sh * 0.105);
+    ctx.font = '300 ' + ts + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(228,234,216,.62)';
+    ctx.fillText('03:47', 0, -sh * 0.305);
+
+    ctx.font = (ts * 0.24) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(152,164,146,.42)';
+    ctx.fillText('洛亚提自由联邦 · 办公厅', 0, -sh * 0.228);
+
+    // 来电横幅
+    if (t >= TL.banner) {
+      var bt = ease((t - TL.banner) / 430);
+      var bw = sw * 0.88, bh = sh * 0.094;
+      var by = lerp(-sh * 0.44, -sh * 0.138, bt);
+
+      ctx.save();
+      ctx.globalAlpha = bt;
+      rr(-bw / 2, by, bw, bh, bh * 0.2);
+      ctx.fillStyle = 'rgba(19,25,21,.94)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(125,155,98,.20)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // 头像
+      var ar = bh * 0.27;
+      var ax = -bw / 2 + bh * 0.15;
+      rr(ax, by + bh / 2 - ar, ar * 2, ar * 2, ar * 0.62);
+      ctx.fillStyle = 'rgba(34,44,36,.95)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(125,155,98,.25)';
+      ctx.stroke();
+      ctx.font = '900 ' + (ar * 1.0) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(214,210,192,.8)';
+      ctx.fillText('办', ax + ar, by + bh / 2 + ar * 0.04);
+
+      // 文字
+      var tx = ax + ar * 2 + bw * 0.045;
+      ctx.textAlign = 'left';
+      ctx.font = '700 ' + (bh * 0.28) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(228,224,208,.95)';
+      ctx.fillText('洛亚提办公厅', tx, by + bh * 0.38);
+      ctx.font = (bh * 0.19) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(150,162,144,.82)';
+      ctx.fillText('值班专线 · 来电中', tx, by + bh * 0.73);
+      ctx.restore();
+    }
+
+    // 接听 / 挂断 两个圆（提示该按下去）
+    var bt2 = clamp01((t - TL.banner - 260) / 420);
+    if (bt2 > 0) {
+      var r = Math.min(sw * 0.085, sh * 0.045);
+      var cy2 = sh * 0.285;
+      var dx = sw * 0.20;
+      var pulse = RM ? 1 : 1 + Math.sin(t / 380) * 0.035;
+
+      ctx.save();
+      ctx.globalAlpha = bt2;
+      // 左：挂断
+      ctx.beginPath();
+      ctx.arc(-dx, cy2, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(96,48,38,.55)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(170,92,70,.28)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // 右：接听
+      ctx.beginPath();
+      ctx.arc(dx, cy2, r * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56,86,58,.72)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(125,170,110,.5)';
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.font = (r * 0.40) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,156,138,.85)';
+      ctx.fillText('挂断', -dx, cy2 + r + r * 0.55);
+      ctx.fillText('接听', dx, cy2 + r + r * 0.55);
+      ctx.restore();
+    }
+  }
+
+
+  /* ---------------- 镜头二：通话中 ---------------- */
+  function drawCall(sw, sh, lm, t) {
+    ctx.fillStyle = '#060a08';
+    ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    var fs = Math.max(9, sw * 0.058);
+
+    // 顶栏
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.66) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(158,170,150,.7)';
+    ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 1.15);
+    ctx.textAlign = 'right';
+    ctx.fillText('87%', sw * 0.42, -sh / 2 + fs * 1.15);
+
+    // 通话中 + 计时
+    var sec = Math.floor(lm / 1000) + 1;
+    var tick = '00:' + (sec < 10 ? '0' : '') + sec;
+    ctx.textAlign = 'center';
+    ctx.font = (fs * 0.74) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(125,155,98,.92)';
+    ctx.fillText('通话中　' + tick, 0, -sh * 0.32);
+
+    // 头像
+    var av = Math.min(sw * 0.2, sh * 0.072);
+    var avY = -sh * 0.232;
+    rr(-av / 2, avY, av, av, av * 0.16);
+    ctx.fillStyle = 'rgba(30,40,34,.95)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(125,155,98,.32)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = '900 ' + (av * 0.5) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(212,208,192,.75)';
+    ctx.fillText('办', 0, avY + av * 0.53);
+
+    // 机构名
+    var ns = Math.min(sw * 0.104, fs * 1.95);
+    ctx.font = '900 ' + ns + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(230,226,210,.96)';
+    ctx.fillText('洛亚提办公厅', 0, -sh * 0.072);
+
+    // 线路
+    ctx.font = (ns * 0.42) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(150,162,144,.85)';
+    ctx.fillText('值班专线 · 分机 0347', 0, -sh * 0.018);
+
+    // 声波
+    var bars = 20;
+    var bw = sw * 0.026, gap = sw * 0.012;
+    var totalW = bars * bw + (bars - 1) * gap;
+    var baseY = sh * 0.068;
+    for (var i = 0; i < bars; i++) {
+      var ph = lm / 175 + i * 0.82;
+      var amp = 0.14 + Math.abs(Math.sin(ph)) * 0.66 * (0.42 + hash(i * 3.1) * 0.58);
+      var hgt = Math.max(2, sh * 0.062 * amp);
+      var bx = -totalW / 2 + i * (bw + gap);
+      ctx.fillStyle = 'rgba(125,155,98,' + (0.28 + amp * 0.58).toFixed(2) + ')';
+      ctx.fillRect(bx, baseY - hgt / 2, bw, hgt);
+    }
+
+    // 小字
+    ctx.font = (ns * 0.36) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(118,128,112,.82)';
+    ctx.fillText('加密线路 · 通话将被记录', 0, sh * 0.128);
+
+    // 底部三个键
+    var r = Math.min(sw * 0.07, sh * 0.030);
+    var btnY = sh * 0.255;
+    var dx = sw * 0.21;
+    var btns = [
+      { x: -dx, t: '静音', a: 0.32 },
+      { x: 0, t: '挂断', a: 0.46, red: true },
+      { x: dx, t: '免提', a: 0.32 }
+    ];
+    for (var k = 0; k < btns.length; k++) {
+      var b = btns[k];
+      ctx.beginPath();
+      ctx.arc(b.x, btnY, r, 0, Math.PI * 2);
+      ctx.fillStyle = b.red ? 'rgba(118,50,38,' + b.a.toFixed(2) + ')' : 'rgba(44,56,46,' + b.a.toFixed(2) + ')';
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = b.red ? 'rgba(160,84,64,.34)' : 'rgba(125,155,98,.20)';
+      ctx.stroke();
+      ctx.font = (ns * 0.33) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(138,148,130,.75)';
+      ctx.fillText(b.t, b.x, btnY + r + ns * 0.40);
+    }
+  }
+
+  /* ---------------- 镜头三：标题 ---------------- */
+  function spaced(text, x, y, size, gap, color, alpha, weight) {
+    ctx.save();
+    ctx.font = (weight || '900') + ' ' + size + 'px ' + SERIF;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+
+    var chars = text.split('');
+    var widths = [];
+    var total = 0;
+    var i;
+    for (i = 0; i < chars.length; i++) {
+      widths[i] = ctx.measureText(chars[i]).width;
+      total += widths[i];
+    }
+    total += gap * (chars.length - 1);
+
+    var cx = x - total / 2;
+    for (i = 0; i < chars.length; i++) {
+      ctx.fillText(chars[i], cx, y);
+      cx += widths[i] + gap;
+    }
+    ctx.restore();
+  }
+
+  function drawTitle(t) {
+    var p = clamp01((t - TL.title) / 2700);
+    var a = ease(clamp01((t - TL.title) / 800));
+
+    var rg = ctx.createRadialGradient(W / 2, H * 0.5, 0, W / 2, H * 0.5, Math.max(W, H) * 0.55);
+    rg.addColorStop(0, 'rgba(120,40,30,' + (0.08 + p * 0.07).toFixed(3) + ')');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 电流抖动
+    var fk = 1;
+    if (!RM) {
+      var lm = t - TL.title;
+      if (lm > 420 && lm < 560) fk = 0.35 + Math.random() * 0.4;
+      else if (lm > 1400 && lm < 1500) fk = 0.6;
+    }
+
+    // 标题：5 字自动缩到画面 88% 内
+    var size = Math.min(W * 0.15, H * 0.11, 104);
+    var gap = size * 0.07;
+    ctx.font = '900 ' + size + 'px ' + SERIF;
+    var wid = 0;
+    var chars = '洛亚提办公厅'.split('');
+    for (var i = 0; i < chars.length; i++) wid += ctx.measureText(chars[i]).width;
+    wid += gap * (chars.length - 1);
+    if (wid > W * 0.88) {
+      size *= (W * 0.88) / wid;
+      gap = size * 0.07;
+      wid = W * 0.88;
+    }
+
+    var ty = H * 0.48;
+
+    // 小标
+    ctx.save();
+    ctx.globalAlpha = a * fk * 0.75;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '500 ' + (size * 0.24) + 'px ' + MONO;
+    ctx.fillStyle = '#9aa38f';
+    ctx.fillText('洛 亚 提 联 邦', W / 2, ty - size * 0.82);
+    ctx.restore();
+
+    // 主标题
+    ctx.save();
+    ctx.shadowColor = 'rgba(180,70,47,.5)';
+    ctx.shadowBlur = size * 0.32;
+    spaced('洛亚提办公厅', W / 2, ty, size, gap, '#e8dfc9', a * fk, '900');
+    ctx.restore();
+
+    // 红线
+    var lw = W * 0.32 * clamp01((t - TL.title - 700) / 1200);
+    if (lw > 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.7 * a;
+      ctx.fillStyle = '#b4462f';
+      ctx.fillRect(W / 2 - lw / 2, ty + size * 0.62, lw, 2);
+      ctx.restore();
+    }
+
+    // 副标
+    ctx.save();
+    ctx.globalAlpha = clamp01((t - TL.title - 900) / 900) * fk;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Math.max(10, size * 0.20) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(142,152,134,.85)';
+    ctx.fillText('办公厅 · 值班室', W / 2, ty + size * 1.16);
+    ctx.fillStyle = 'rgba(112,120,106,.7)';
+    ctx.fillText('EXT · 0347', W / 2, ty + size * 1.5);
+    ctx.restore();
+  }
+
+  /* ---------------- 合成：按阶段调度 ---------------- */
+  var stage = 'gate';        // gate → ring → call → home / app，或 ring → kill → dead
+  var segT0 = 0;
+  var FRZ = -1;             // 调试：#f=阶段:毫秒 冻结在该帧
+  var hotspots = [];         // 当前可点区域（CSS 像素）
+  var lastEl = 0;
+
+  function elNow() { return performance.now() - segT0; }
+
+  /* ---------- 背景底板 ---------- */
+  function stageBg(glow, el) {
+    var rg = ctx.createRadialGradient(W / 2, H * 0.46, 0, W / 2, H * 0.46, Math.max(W, H) * 0.62);
+    rg.addColorStop(0, 'rgba(48,64,52,' + (0.22 * glow).toFixed(3) + ')');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, W, H);
+    drawDust(el, glow);
+  }
+
+  /* ---------- 阶段一：来电，两个按钮 ---------- */
+  function drawRing(el, gateOn) {
+    var glow = gateOn ? 0.35 : 1;
+    stageBg(glow, el);
+
+    var w = Math.min(W * 0.64, H * 0.31);
+    var floatY = RM ? 0 : Math.sin(el / 1600) * 3;
+    var tilt = -0.010;
+    var cy = H * 0.46 + floatY;
+
+    if (!gateOn) {
+      phoneFrame(W / 2, cy, w, tilt, 1, 1, function (sw, sh) {
+        drawLock(sw, sh, 3000 + el);
+      });
+    } else {
+      // 首屏时手机还没亮，只留个暗影
+      phoneFrame(W / 2, cy, w, tilt, 0.12, 0, function () { });
+    }
+
+    if (gateOn) return;
+
+    // 可点区域：屏幕坐标 → 页面坐标
+    var sw = w * 0.92, sh = w * 2.04 * 0.955;
+    var r = Math.min(sw * 0.085, sh * 0.045) * 1.22;
+    var cyS = sh * 0.285, dxS = sw * 0.20;
+    [[-dxS, 'hang'], [dxS, 'answer']].forEach(function (p) {
+      var x = p[0], y = cyS;
+      var px = W / 2 + (x * Math.cos(tilt) - y * Math.sin(tilt));
+      var py = cy + (x * Math.sin(tilt) + y * Math.cos(tilt));
+      hotspots.push({ id: p[1], x: px, y: py, r: r });
+    });
+
+    // 轻提示
+    var tipA = gateOn ? 0 : clamp01((el - 500) / 800);
+    ctx.save();
+    ctx.globalAlpha = tipA * (0.38 + 0.22 * Math.sin(el / 780));
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '11px ' + MONO;
+    ctx.fillStyle = '#8d9a84';
+    ctx.fillText('接 通 ， 或 者 挂 断', W / 2, Math.min(H - 40, cy + w * 1.12));
+    ctx.restore();
+  }
+
+  /* ---------- 阶段二 A：接通 → 元首委任 → 通话结束 → 桌面 ---------- */
+
+  // 委任词（逐字浮现）
+  var APPOINT = [
+    { t: 700, s: '洛亚提自由联邦 · 元首委任' },
+    { t: 1700, s: '自今日 03:47 起，从今天开始你就是洛亚提的元首。' },
+    { t: 3000, s: '此令即刻生效。勿外传，勿久留。' },
+    { t: 4300, s: '在这里，名字比人重要。' }
+  ];
+
+  var APPT_END = 7000;   // 通话结束
+  var APPT_HOME = 8000;  // 退到桌面
+
+  function drawAppoint(el) {
+    var w = Math.min(W * 0.70, H * 0.38);
+    var fade = clamp01((el - APPT_HOME + 250) / 600);
+    var ended = el > APPT_END;
+
+    stageBg(1 - fade, el);
+    if (fade > 0.98) return;
+
+    var grow = 1 + clamp01(el / APPT_HOME) * 0.10;
+
+    ctx.globalAlpha = 1 - fade;
+    phoneFrame(W / 2, H * 0.47, w * grow, -0.006, 1, 1 - fade * 0.5, function (sw, sh) {
+      ctx.fillStyle = '#070b09';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      var fs = Math.max(9, sw * 0.05);
+      var sec = 1 + Math.floor(el / 1000);
+      var tick = '00:' + (sec < 10 ? '0' : '') + sec;
+
+      // 状态栏
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.62) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(158,170,150,.66)';
+      ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 1.05);
+      ctx.textAlign = 'right';
+      ctx.fillText('87%', sw * 0.42, -sh / 2 + fs * 1.05);
+
+      if (ended) {
+        // 通话已断：整屏压暗，只留结论
+        ctx.fillStyle = 'rgba(4,7,6,.94)';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+        ctx.textAlign = 'center';
+        ctx.font = '900 ' + (sw * 0.16) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(226,220,204,.95)';
+        ctx.fillText('通话结束', 0, -sh * 0.035);
+
+        ctx.font = (sw * 0.038) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(150,162,142,.85)';
+        ctx.fillText('值班专线 · 0347　' + tick, 0, sh * 0.055);
+
+        ctx.fillStyle = 'rgba(125,155,98,.16)';
+        ctx.fillRect(-sw * 0.20, sh * 0.085, sw * 0.40, 1);
+        return;
+      }
+
+      // 通话中 + 计时
+      ctx.textAlign = 'center';
+      ctx.font = (fs * 0.72) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(125,155,98,.9)';
+      ctx.fillText('通话中　' + tick, 0, -sh * 0.345);
+
+      // 头像 + 机构
+      var av = Math.min(sw * 0.17, sh * 0.085);
+      var avY = -sh * 0.285;
+      rr(-av / 2, avY, av, av, av * 0.16);
+      ctx.fillStyle = 'rgba(30,40,34,.95)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(125,155,98,.30)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.font = '900 ' + (av * 0.46) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(212,208,192,.78)';
+      ctx.fillText('办', 0, avY + av * 0.51);
+
+      var ns = Math.min(sw * 0.098, fs * 1.8);
+      ctx.font = '900 ' + ns + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(228,224,208,.95)';
+      ctx.fillText('洛亚提办公厅', 0, -sh * 0.150);
+      ctx.font = (ns * 0.38) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(148,160,142,.78)';
+      ctx.fillText('值班专线 · 分机 0347', 0, -sh * 0.112);
+
+      // 细线
+      ctx.fillStyle = 'rgba(125,155,98,.18)';
+      ctx.fillRect(-sw * 0.36, -sh * 0.082, sw * 0.72, 1);
+
+      // 委任词
+      var ty = sh * 0.004;
+      APPOINT.forEach(function (line, i) {
+        if (el < line.t) return;
+        var n = Math.floor((el - line.t) / 24);
+        var str = line.s.slice(0, n);
+        var size = (i === 0 ? fs * 0.92 : fs * 0.88);
+        ctx.font = (i === 0 ? '600 ' : '400 ') + size + 'px ' + SERIF;
+        var wid = ctx.measureText(line.s).width;
+        if (wid > sw * 0.84) {
+          size *= (sw * 0.84) / wid;
+          ctx.font = (i === 0 ? '600 ' : '400 ') + size + 'px ' + SERIF;
+        }
+        ctx.fillStyle = i === 0 ? 'rgba(160,176,148,.95)' : 'rgba(232,226,210,.95)';
+        ctx.fillText(str, 0, ty + i * sh * 0.050);
+      });
+
+      // 印章：落在最后一行右下
+      if (el > 5200) {
+        var sa = clamp01((el - 5200) / 420);
+        ctx.save();
+        ctx.translate(sw * 0.290, sh * 0.255);
+        ctx.rotate(-0.09);
+        ctx.globalAlpha = sa * 0.92;
+        ctx.strokeStyle = '#8e3b2b';
+        ctx.lineWidth = Math.max(2, sw * 0.006);
+        var box = sw * 0.145;
+        ctx.strokeRect(-box / 2, -box / 2, box, box);
+        ctx.fillStyle = '#8e3b2b';
+        ctx.textAlign = 'center';
+        ctx.font = '900 ' + (box * 0.46) + 'px ' + SERIF;
+        ctx.fillText('元', 0, -box * 0.185);
+        ctx.fillText('首', 0, box * 0.215);
+        ctx.restore();
+      }
+
+      // 底部三键：静音 / 免提 / 挂断（通话界面，不响应）
+      var by = sh * 0.352;
+      var br = sw * 0.060;
+      [
+        ['静', -0.235, 'rgba(150,162,142,.55)'],
+        ['免', 0, 'rgba(150,162,142,.55)'],
+        ['挂', 0.235, 'rgba(176,84,62,.75)']
+      ].forEach(function (bt) {
+        var bx = bt[1] * sw;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,.045)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(200,210,190,.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.font = '600 ' + (br * 0.78) + 'px ' + SERIF;
+        ctx.fillStyle = bt[2];
+        ctx.fillText(bt[0], bx, by + br * 0.04);
+      });
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- 阶段三：手机桌面 ---------- */
+  var APPS = [
+    { id: 'time', name: '时间表', ch: '表', c1: '#3c5f46', c2: '#1f3527', ac: '#8aa874' },
+    { id: 'call', name: '电话', ch: '话', c1: '#31584a', c2: '#1a3229', ac: '#78a08a' },
+    { id: 'sms', name: '短信', ch: '信', c1: '#345164', c2: '#1c2d3a', ac: '#7fa0bc' },
+    { id: 'wechat', name: '微信', ch: '微', c1: '#35603f', c2: '#1c3524', ac: '#6fa87a' },
+    { id: 'qq', name: 'QQ', ch: 'Q', c1: '#2f4a68', c2: '#1a2839', ac: '#7ba2c8' },
+    { id: 'browser', name: '浏览器', ch: '网', c1: '#4a4a38', c2: '#28281e', ac: '#adad86' }
+  ];
+
+  var appOpen = 'time';
+
+  function homeGeom() {
+    var w = Math.min(W * 0.74, H * 0.46);
+    return { w: w, cx: W / 2, cy: H * 0.480, tilt: 0 };
+  }
+
+  function pageOf(x, y, cx, cy, tilt) {
+    return {
+      x: cx + (x * Math.cos(tilt) - y * Math.sin(tilt)),
+      y: cy + (x * Math.sin(tilt) + y * Math.cos(tilt))
+    };
+  }
+
+  // 只在屏幕空间里画一层（不重绘机身），用来叠横幅 / 关机黑屏
+  function screenWrap(fn) {
+    var g = homeGeom();
+    ctx.save();
+    ctx.translate(g.cx, g.cy);
+    ctx.rotate(g.tilt);
+    fn(g.w * 0.92, g.w * 2.04 * 0.955);
+    ctx.restore();
+  }
+
+  // 5:00 闹钟：到点响，响完手机自己黑掉（放在全局，任何界面都会触发）
+  function alarmTick() {
+    var now = performance.now();
+    if (alarmAt > 0 && alarmStart < 0 && now >= alarmAt) {
+      alarmStart = now;
+      PH_CLOCK = '05:00';
+      cueAlarm();
+      cueTimers.push(setTimeout(function () { cueAlarm(); }, 2100));
+    }
+    if (alarmStart > 0 && shutFade < 0 && now - alarmStart > 4200) { shutFade = now; }
+  }
+
+  function alarmOverlay() {
+    var now = performance.now();
+    if (shutFade > 0) {
+      screenWrap(function (sw, sh) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+        var off = (performance.now() - shutFade) / 900;
+        if (off < 1) {
+          ctx.globalAlpha = 1 - off;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = (sh * 0.020) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(180,190,170,.55)';
+          ctx.fillText('关机中…', 0, 0);
+          ctx.globalAlpha = 1;
+        }
+      });
+      // 关机之后，屏幕右边浮出两样东西
+      if (now - shutFade > 1500) offOptions();
+      return;
+    }
+    if (alarmStart > 0 && now - alarmStart < 4200) {
+      screenWrap(function (sw, sh) {
+        var h2 = sh * 0.115;
+        var y2 = -sh / 2 + sh * 0.015;
+        rr(-sw * 0.43, y2, sw * 0.86, h2, h2 * 0.2);
+        ctx.fillStyle = 'rgba(30,26,22,.97)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(196,150,90,.34)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '600 ' + (sh * 0.0155) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(214,176,120,.95)';
+        ctx.fillText('闹 钟', -sw * 0.385, y2 + h2 * 0.28);
+        ctx.font = (sh * 0.0190) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(232,226,208,.95)';
+        ctx.fillText('05:00  起床', -sw * 0.385, y2 + h2 * 0.66);
+      });
+    }
+  }
+  function drawHome(el) {
+    var g = homeGeom();
+    stageBg(clamp01(el / 420), el);
+
+    ctx.globalAlpha = clamp01(el / 420);
+    phoneFrame(g.cx, g.cy, g.w, g.tilt, 1, 1, function (sw, sh) {
+      // 壁纸
+      var bg = ctx.createLinearGradient(0, -sh / 2, 0, sh / 2);
+      bg.addColorStop(0, '#0a1210');
+      bg.addColorStop(0.5, '#070d0a');
+      bg.addColorStop(1, '#040706');
+      ctx.fillStyle = bg;
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      var g2 = ctx.createRadialGradient(0, -sh * 0.18, 0, 0, -sh * 0.18, sh * 0.6);
+      g2.addColorStop(0, 'rgba(52,74,56,.20)');
+      g2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      // 状态栏
+      var fs = Math.max(9, sw * 0.05);
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.62) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(158,170,150,.68)';
+      ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 1.05);
+      ctx.textAlign = 'right';
+      ctx.fillText('87%', sw * 0.42, -sh / 2 + fs * 1.05);
+
+      // 大时间
+      ctx.textAlign = 'center';
+      ctx.font = '300 ' + (sw * 0.145) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(224,230,214,.72)';
+      ctx.fillText(PH_CLOCK, 0, -sh * 0.325);
+      ctx.font = (sw * 0.032) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(140,152,136,.55)';
+      ctx.fillText('洛亚提自由联邦 · 办公厅', 0, -sh * 0.263);
+      ctx.font = (sw * 0.026) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(120,132,116,.42)';
+      ctx.fillText('机主 Gun7z · 今夜值班 0347', 0, -sh * 0.218);
+
+      // 六个应用
+      var iw = sw * 0.185;
+      var cols = [-0.30, 0, 0.30];
+      var rows = [-0.010, 0.185];
+      var r2 = iw * 0.62;
+
+      APPS.forEach(function (a, i) {
+        var ix = cols[i % 3] * sw;
+        var iy = rows[Math.floor(i / 3)] * sh;
+
+        // 图标
+        var ig = ctx.createLinearGradient(ix, iy - iw / 2, ix, iy + iw / 2);
+        ig.addColorStop(0, a.c1);
+        ig.addColorStop(1, a.c2);
+        rr(ix - iw / 2, iy - iw / 2, iw, iw, iw * 0.24);
+        ctx.fillStyle = ig;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(210,220,200,.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 字
+        ctx.textAlign = 'center';
+        ctx.font = '900 ' + (iw * 0.40) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(228,232,216,.92)';
+        ctx.fillText(a.ch, ix, iy + iw * 0.02);
+
+        // 名字
+        ctx.font = (Math.max(10, sw * 0.031)) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(160,172,152,.8)';
+        ctx.fillText(a.name, ix, iy + iw * 0.62);
+
+        var p = pageOf(ix, iy, g.cx, g.cy, g.tilt);
+        hotspots.push({ id: 'app:' + a.id, x: p.x, y: p.y, r: r2 });
+      });
+
+      // 底部横条
+      ctx.fillStyle = 'rgba(200,210,190,.22)';
+      ctx.fillRect(-sw * 0.12, sh * 0.455, sw * 0.24, Math.max(2, sh * 0.006));
+    });
+    ctx.globalAlpha = 1;
+
+    // 提示
+    ctx.save();
+    ctx.globalAlpha = 0.40 + 0.16 * Math.sin(el / 900);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '11px ' + MONO;
+    ctx.fillStyle = '#8d9a84';
+    ctx.fillText('轻 触 图 标 · 打 开 应 用', W / 2, g.cy + g.w * 1.10);
+    ctx.restore();
+  }
+
+  /* ---------- QQ：登录 → 通知邀请 → 群聊 ---------- */
+  var QQ_ACC = '3544135243';
+  var QQ_PW = '0347';
+  var QQ_GROUP = '洛亚提自由联邦【SIMMC】';
+  var QQ_OK = '#7ba2c8';          // QQ 的冷蓝
+  var QQ_STEP = 750;              // 群聊每条隔多久出现
+
+  var qqState = 'login';          // login / main
+  var qqPass = '';
+  var qqErrAt = -99999;
+  var qqTab = 'msg';              // msg / notice / contact
+  var qqView = 'list';            // list / chat
+  var qqJoined = false;
+  var qqChatT0 = 0;               // 群聊开场时刻（逐条出现）
+  var qqForce = -1;              // 预览用：强制显示到第几条
+  var qqPc = 0;                  // 私聊对象（QQ_MEMBERS 下标）
+  var qqMine = [];               // 我发出去的话 + 后面跟着的回话
+  var qqSent = false;            // 我是否已经回过话
+  var qqSentAt = -99999;
+  var qqChatDone = false;        // 群消息是否已经全部说完（再点进去就不用重播）
+  var qqChatShown = 1;           // 离开时看到第几条，回来接着往下走
+  var qqScroll = 0;              // 往上翻了多少像素（0 = 停在最新）
+  var qqScrollMax = 0;
+  var chatDrag = null;           // 手指/鼠标按住聊天区的起点
+
+  // 群成员：名字、身份、头像字、说话的颜色
+  // 前六个是这个时间线的人；最后一个「你」是本机，也就是顶了元首位置的玩家
+  var QQ_MEMBERS = [
+    { n: 'Altria_VAI', r: '首相', ch: '首', c: '#a8b48c' },
+    { n: 'konglong', r: '地下·建筑部长', ch: '地', c: '#8c9aa8' },
+    { n: 'Mian_Ba0', r: '洛亚提联邦长', ch: '联', c: '#b0a888' },
+    { n: 'NorGestrel', r: '地上建筑部长', ch: '建', c: '#93a89a' },
+    { n: 'Akar1_17', r: '洛亚提公主', ch: '主', c: '#b09098' },
+    { n: 'Gun7z', r: '元首 · 另一台', ch: '元', c: '#c8b48a' },
+    { n: '你', r: '本机 · Gun7z', ch: '你', c: '#dcd6c0' }
+  ];
+
+  // 群聊：铺（谁进群了、六个账号七个在线）→ 错位（他那边的东西是圆的）→ 揭底（魔法阵、两个名字）
+  var QQ_CHAT = [
+    { sys: '你 通过群二维码加入了群聊', tm: '03:49' },
+    { sys: 'Gun7z 的手机 在另一台设备上登录', tm: '03:49' },
+    { m: 0, t: '谁加入了群聊？', tm: '03:50' },
+    { m: 2, t: 'Gun7z大号吧', tm: '03:50' },
+    { m: 1, t: 'Gun7z去招人，快点', tm: '03:51' },
+    { m: 3, t: '只有6个账号，咋在线7个人', tm: '03:51' },
+    { m: 4, t: '好神奇吖', tm: '03:52' },
+    { m: 2, t: '龙逼', tm: '03:52' },
+    { m: 0, t: 'Gun7z出来说话', tm: '03:53' },
+    { m: 1, t: '来建地下城', tm: '03:53' },
+    { m: 0, t: '昨天晚上Gun7z不在议事厅，@Gun7z 你在哪儿？', tm: '03:54' },
+    { m: 5, t: '我在一个有三扇窗的房间里。', tm: '03:54' },
+    { m: 5, t: '你们猜我看到了什么！', tm: '03:54' },
+    { m: 2, t: '…… 。这句话我™读了三遍。', tm: '03:55' },
+    { m: 3, t: '看到啥了', tm: '03:55' },
+    { m: 5, t: '这里的物品既然是圆的不是方的，牛逼不', tm: '03:55' },
+    { m: 4, t: 'Gun7z我也想看', tm: '03:56' },
+    { m: 5, t: '不是。有个东西它在墙上。它一响，我就不敢动。', tm: '03:56' },
+    { m: 1, t: '墙上会响的东西，我们这儿好像没有。', tm: '03:56' },
+    { m: 2, t: '@Gun7z 你是谁。', tm: '03:57' },
+    { m: 5, t: '我是 Gun7z。还能是谁666', tm: '03:57' },
+    { m: 5, t: '只是我不在你们那边。你们不懂', tm: '03:57' },
+    { m: 0, t: '那我面前这个Gun7z，是谁。', tm: '03:58' },
+    { m: 5, t: '阿？', tm: '03:58' },
+    { m: 5, t: '我这边的床是软的，不是床方块。', tm: '03:58' },
+    { m: 2, t: '你是谁！', tm: '03:59' },
+    { m: 2, t: '龙逼', tm: '03:59' },
+    { m: 3, t: '什么时候换的。', tm: '03:59' },
+    { m: 5, t: '今天，03:47。一通电话打进来，我按了接听。', tm: '04:00' },
+    { m: 5, t: '再睁眼，我在这儿；再睁眼，你在那儿。', tm: '04:00' },
+    { m: 1, t: '魔法阵怎么开启了', tm: '04:00' },
+    { m: 5, t: '谁打开的！', tm: '04:01' },
+    { m: 5, t: '我去了。', tm: '04:01' },
+    { own: true, n: 'Gun7z', t: '魔法阵是我开的。', tm: '04:01' },
+    { m: 5, t: '位置发你们了。', tm: '04:01', loc: ['洛亚提 · 魔法阵', '地下三层 · 尽头闸门'] },
+    { m: 5, t: '不是？', tm: '04:01' },
+    { m: 5, t: '不是？？', tm: '04:01' }
+  ];
+
+  // 私聊：每个人都漏一点线索，元首那条把话挑明
+  var QQ_PRIVATE = [
+    [
+      { m: 0, t: '刚进群那个是谁，头像都没换。', tm: '03:52' },
+      { m: 0, t: '元首从来不问「这是哪」。你刚才问了。', tm: '03:56' },
+      { m: 0, t: '行。你要真是他，就把昨晚议事厅那盏灯的事说一遍。', tm: '04:00' }
+    ],
+    [
+      { m: 1, t: '西边那块不是没加载，是有人把世界边界往外推了，一格一格推。', tm: '03:54' },
+      { m: 1, t: '新的土上没有声音。踩上去，脚底下是空的。', tm: '03:57' },
+      { m: 1, t: '魔法阵就开在那底下。我挖了三天，挖到门，没挖到门后面。', tm: '04:00' }
+    ],
+    [
+      { m: 2, t: '第七号令原来只有一句：谁也不许动魔法阵。', tm: '03:55' },
+      { m: 2, t: '有人把后面刮掉了，改成一个字。', tm: '03:58' },
+      { m: 2, t: '换。', tm: '03:58' },
+      { m: 2, t: '纸背还有道压痕，是个号码。0347。', tm: '04:01' }
+    ],
+    [
+      { m: 3, t: '火把插到第十七格就插不进去。', tm: '03:56' },
+      { m: 3, t: '边界不收火把。边界收人。', tm: '03:59' },
+      { m: 3, t: '三班守卫昨晚站那十六格上，天亮只剩火把，火把是凉的——没烧过。', tm: '04:01' }
+    ],
+    [
+      { m: 4, t: '他叫我小石头。从来不叫公主。', tm: '03:57' },
+      { m: 4, t: '他说我出生那天下了三天雨，雨是竖着下的。我们这儿没下过雨。', tm: '04:00' },
+      { m: 4, t: '你要真是他，就说一遍那天的事。说不出来，别叫我小石头。', tm: '04:02' }
+    ],
+    [
+      { m: 5, t: '别在群里打字。他们看得见手，看不见人。', tm: '03:58' },
+      { m: 5, t: '你家的门锁，是不是要响两声才开。我按了三次。', tm: '04:00' },
+      { m: 5, t: '第一通电话是换，第二通电话是收。别接。', tm: '04:03' }
+    ]
+  ];
+  function qqStatus(sw, sh, fs, clock, pct) {
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.72) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(158,170,150,.66)';
+    ctx.fillText(clock, -sw * 0.42, -sh / 2 + fs * 0.95);
+    ctx.textAlign = 'right';
+    ctx.fillText(pct, sw * 0.42, -sh / 2 + fs * 0.95);
+    ctx.textAlign = 'center';
+  }
+
+  // 画一个头的返回热点
+  function qqBack(sw, sh, g, fs, hy, hh) {
+    ctx.textAlign = 'left';
+    ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(190,200,176,.9)';
+    ctx.fillText('‹', -sw * 0.44, hy + hh * 0.52);
+    var b = pageOf(-sw * 0.40, hy + hh * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: 'back', x: b.x, y: b.y, r: Math.max(22, fs * 2.2) });
+  }
+
+  function drawQQ(el) {
+    var g = homeGeom();
+    stageBg(1, el);
+
+    phoneFrame(g.cx, g.cy, g.w, g.tilt, 1, 1, function (sw, sh) {
+      var fs = Math.max(10, sw * 0.042);
+      ctx.fillStyle = '#070b09';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      if (qqState === 'login') { drawQQLogin(sw, sh, g, el, fs); return; }
+
+      qqStatus(sw, sh, fs, PH_CLOCK, '82%');
+
+      // 标题栏
+      var hy = -sh / 2 + fs * 1.75;
+      var hh = sh * 0.082;
+      ctx.fillStyle = 'rgba(255,255,255,.028)';
+      ctx.fillRect(-sw / 2, hy, sw, hh);
+      ctx.fillStyle = 'rgba(125,155,98,.16)';
+      ctx.fillRect(-sw / 2, hy + hh, sw, 1);
+
+      if (qqView === 'chat' || qqView === 'pchat') { drawQQChat(sw, sh, g, el, fs, hy, hh); return; }
+
+      qqBack(sw, sh, g, fs, hy, hh);
+
+      ctx.textAlign = 'center';
+      ctx.font = '600 ' + (fs * 1.0) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(226,222,206,.95)';
+      ctx.fillText('QQ', 0, hy + hh * 0.52);
+      ctx.fillStyle = QQ_OK;
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(-sw * 0.045, hy + hh + 2, sw * 0.09, Math.max(1, sw * 0.003));
+      ctx.globalAlpha = 1;
+
+      if (qqTab === 'msg') drawQQMsgList(sw, sh, g, el, fs, hy + hh);
+      else if (qqTab === 'notice') drawQQNotice(sw, sh, g, el, fs, hy + hh);
+      else drawQQContacts(sw, sh, g, el, fs, hy + hh);
+
+      drawQQTabs(sw, sh, g, fs);
+    });
+  }
+
+  function drawQQTabs(sw, sh, g, fs) {
+    var tabs = [['消息', 'msg'], ['通知', 'notice'], ['联系人', 'contact']];
+    var tby = sh * 0.425;
+    ctx.fillStyle = 'rgba(255,255,255,.022)';
+    ctx.fillRect(-sw / 2, tby - sh * 0.037, sw, sh * 0.074);
+    ctx.fillStyle = 'rgba(125,155,98,.14)';
+    ctx.fillRect(-sw / 2, tby - sh * 0.037, sw, 1);
+
+    tabs.forEach(function (t, i) {
+      var tx = (-0.43 + (i + 0.5) * (0.86 / tabs.length)) * sw;
+      var on = qqTab === t[1];
+      ctx.textAlign = 'center';
+      ctx.font = (on ? '600 ' : '400 ') + (fs * 0.80) + 'px ' + (on ? SERIF : MONO);
+      ctx.fillStyle = on ? QQ_OK : 'rgba(136,148,128,.55)';
+      ctx.fillText(t[0], tx, tby + fs * 0.2);
+
+      // 通知上的未读点
+      if (t[1] === 'notice' && !qqJoined) {
+        ctx.beginPath();
+        ctx.arc(tx + fs * 1.15, tby - fs * 0.5, fs * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(196,92,68,.95)';
+        ctx.fill();
+      }
+
+      var p = pageOf(tx, tby + fs * 0.2, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'qq:tab:' + t[1], x: p.x, y: p.y, r: Math.max(26, fs * 1.8) });
+    });
+  }
+
+  function drawQQLogin(sw, sh, g, el, fs) {
+    qqStatus(sw, sh, fs, PH_CLOCK, '82%');
+
+    // 回桌面
+    ctx.textAlign = 'left';
+    ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(190,200,176,.8)';
+    ctx.fillText('‹', -sw * 0.44, -sh / 2 + fs * 2.3);
+    var hb = pageOf(-sw * 0.42, -sh / 2 + fs * 2.3, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: 'back', x: hb.x, y: hb.y, r: Math.max(22, fs * 2.2) });
+
+    var shake = 0;
+    if (el - qqErrAt < 340) shake = Math.sin((el - qqErrAt) / 15) * 5;
+
+    // 标志
+    var cy0 = -sh * 0.302;
+    var b = sw * 0.125;
+    rr(-b / 2, cy0 - b / 2, b, b, b * 0.26);
+    ctx.fillStyle = 'rgba(48,70,92,.55)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,180,208,.28)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + (b * 0.52) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(214,224,236,.86)';
+    ctx.fillText('Q', 0, cy0 + b * 0.05);
+
+    ctx.font = '600 ' + (fs * 1.05) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(224,222,208,.94)';
+    ctx.fillText('登 录', 0, cy0 + b * 1.35);
+
+    // 账号
+    var y1 = -sh * 0.168;
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.72) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(136,148,128,.75)';
+    ctx.fillText('账号', -sw * 0.40, y1);
+    ctx.fillStyle = 'rgba(125,155,98,.10)';
+    ctx.fillRect(-sw * 0.42, y1 + fs * 0.55, sw * 0.84, 1);
+
+    ctx.textAlign = 'center';
+    ctx.font = '600 ' + (fs * 1.02) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(226,224,210,.95)';
+    ctx.fillText(QQ_ACC, 0, y1 + fs * 1.35);
+
+    // 密码
+    var y2 = -sh * 0.062;
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.72) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(136,148,128,.75)';
+    ctx.fillText('密码', -sw * 0.40, y2);
+
+    var slot = sw * 0.092, gap = sw * 0.016;
+    var total = slot * 4 + gap * 3;
+    var sx = (shake ? shake : 0);
+    for (var i = 0; i < 4; i++) {
+      var x = -total / 2 + i * (slot + gap) + sx;
+      rr(x, y2 + fs * 0.95, slot, fs * 2.0, slot * 0.16);
+      ctx.fillStyle = 'rgba(255,255,255,.045)';
+      ctx.fill();
+      ctx.strokeStyle = (i === qqPass.length && el % 900 < 520 && el - qqErrAt > 340)
+        ? 'rgba(150,180,208,.55)' : 'rgba(200,210,190,.16)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (i < qqPass.length) {
+        ctx.textAlign = 'center';
+        ctx.font = '600 ' + (fs * 1.2) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(232,230,216,.95)';
+        ctx.fillText(qqPass.charAt(i), x + slot / 2, y2 + fs * 1.95);
+      }
+    }
+
+    // 提示 / 错误
+    ctx.textAlign = 'center';
+    if (el - qqErrAt < 1800) {
+      ctx.font = (fs * 0.70) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(196,92,68,.95)';
+      ctx.fillText('密码不对，再输一次', 0, y2 + fs * 4.3);
+    } else {
+      ctx.font = (fs * 0.66) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(126,138,120,.55)';
+      ctx.fillText('值班密码 · 四位，手动输入', 0, y2 + fs * 4.3);
+    }
+
+    // 键盘
+    var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '退', '0', '登'];
+    var k0 = 0.118 * sh;
+    var dy = 0.112 * sh;
+    var ks = sw * 0.145;
+    var cols = [-0.225, 0, 0.225];
+
+    keys.forEach(function (k, idx) {
+      var kx = cols[idx % 3] * sw;
+      var ky = k0 + Math.floor(idx / 3) * dy;
+      var isOk = (k === '登');
+
+      rr(kx - ks / 2, ky - ks / 2, ks, ks, ks * 0.28);
+      ctx.fillStyle = isOk ? 'rgba(60,96,126,.60)' : 'rgba(255,255,255,.045)';
+      ctx.fill();
+      ctx.strokeStyle = isOk ? 'rgba(140,178,210,.40)' : 'rgba(200,210,190,.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (k === '退') {
+        ctx.font = '400 ' + (ks * 0.34) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(176,190,172,.72)';
+        ctx.fillText('退格', kx, ky);
+      } else if (isOk) {
+        ctx.font = '600 ' + (ks * 0.33) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(226,232,240,.95)';
+        ctx.fillText('登录', kx, ky);
+      } else {
+        ctx.font = '600 ' + (ks * 0.42) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(222,226,214,.90)';
+        ctx.fillText(k, kx, ky);
+      }
+
+      var p = pageOf(kx, ky, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'qq:key:' + k, x: p.x, y: p.y, r: ks * 0.62 });
+    });
+  }
+
+  function drawQQMsgList(sw, sh, g, el, fs, top) {
+    var rows = [];
+    if (qqJoined) {
+      rows.push({ id: 'qq:group', ch: '群', c: QQ_OK, n: QQ_GROUP, s: qqSent ? ('我：' + (qqMine[0] ? qqMine[0].t : '')) : 'Gun7z：只有6个账号，咋在线7个人', r: qqSent ? '04:02' : '9' });
+    }
+    rows.push({ ch: '内', c: '#78a08a', n: '洛亚提 · 内勤组', s: '今夜有人进楼。', r: '03:44' });
+    rows.push({ ch: '办', c: '#a8b48c', n: '办公厅', s: '文件已封存。', r: '昨天' });
+    rows.push({ ch: 'K', c: '#9a8f80', n: 'K', s: '收到请回。', r: '前天' });
+
+    var rh = sh * 0.098;
+    var y0 = top + sh * 0.055;
+
+    rows.forEach(function (row, i) {
+      var y = y0 + i * rh;
+      var av = sw * 0.076;
+
+      rr(-sw * 0.42, y + rh * 0.12, av, av, av * 0.24);
+      ctx.fillStyle = 'rgba(255,255,255,.06)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,210,190,.10)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 ' + (av * 0.40) + 'px ' + SERIF;
+      ctx.fillStyle = row.c;
+      ctx.fillText(row.ch, -sw * 0.42 + av / 2, y + rh * 0.12 + av * 0.53);
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (fs * 0.92) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(224,220,204,.94)';
+      var nm = row.n;
+      if (ctx.measureText(nm).width > sw * 0.60) {
+        var sz = fs * 0.92; while (ctx.measureText(nm).width > sw * 0.60 && sz > 8) { sz -= 0.5; ctx.font = '600 ' + sz + 'px ' + SERIF; }
+      }
+      ctx.fillText(nm, -sw * 0.30, y + rh * 0.38);
+
+      ctx.font = (fs * 0.72) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(142,154,136,.72)';
+      ctx.fillText(row.s, -sw * 0.30, y + rh * 0.74);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(140,152,132,.66)';
+      ctx.fillText(row.r, sw * 0.40, y + rh * 0.38);
+
+      ctx.fillStyle = 'rgba(125,155,98,.10)';
+      ctx.fillRect(-sw * 0.42, y + rh - 1, sw * 0.84, 1);
+
+      if (row.id) {
+        var p = pageOf(0, y + rh * 0.5, g.cx, g.cy, g.tilt);
+        hotspots.push({ id: row.id, x: p.x, y: p.y, r: Math.max(rh * 0.55, av * 0.9) });
+      }
+    });
+  }
+
+  function drawQQNotice(sw, sh, g, el, fs, top) {
+    var cardTop = top + sh * 0.045;
+    var cardH = sh * 0.36;
+    rr(-sw * 0.40, cardTop, sw * 0.80, cardH, sw * 0.035);
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200,210,190,.10)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 标签
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.66) + 'px ' + MONO;
+    ctx.fillStyle = QQ_OK;
+    ctx.fillText('群 通 知　·　1', -sw * 0.36, cardTop + sh * 0.045);
+
+    // 邀请人
+    var av = sw * 0.085;
+    rr(-sw * 0.36, cardTop + sh * 0.068, av, av, av * 0.24);
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + (av * 0.40) + 'px ' + SERIF;
+    ctx.fillStyle = '#c8b48a';
+    ctx.fillText('元', -sw * 0.36 + av / 2, cardTop + sh * 0.068 + av * 0.53);
+
+    ctx.textAlign = 'left';
+    ctx.font = (fs * 0.80) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(186,196,180,.88)';
+    ctx.fillText('Gun7z（元首）邀请你加入群聊', -sw * 0.36 + av * 1.35, cardTop + sh * 0.068 + av * 0.42);
+
+    // 群名
+    var nmSize = fs * 1.15;
+    ctx.font = '900 ' + nmSize + 'px ' + SERIF;
+    while (ctx.measureText(QQ_GROUP).width > sw * 0.72 && nmSize > 9) { nmSize -= 0.5; ctx.font = '900 ' + nmSize + 'px ' + SERIF; }
+    ctx.fillStyle = 'rgba(228,224,210,.96)';
+    ctx.fillText(QQ_GROUP, -sw * 0.36, cardTop + sh * 0.155);
+
+    ctx.font = (fs * 0.70) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(138,150,132,.66)';
+    ctx.fillText('7 人 · 内部群 · 少一个都不成', -sw * 0.36, cardTop + sh * 0.195);
+
+    if (qqJoined) {
+      ctx.textAlign = 'center';
+      ctx.font = (fs * 0.86) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(150,178,140,.85)';
+      ctx.fillText('已同意 · 群聊在「消息」里', 0, cardTop + sh * 0.268);
+      // 一点落章感
+      ctx.fillStyle = 'rgba(125,155,98,.16)';
+      ctx.fillRect(-sw * 0.14, cardTop + sh * 0.235, sw * 0.28, 1);
+      return;
+    }
+
+    // 两个按钮
+    var bw = sw * 0.27, bh = sh * 0.058, by = cardTop + sh * 0.263;
+    [['拒绝', -1, 'qq:reject'], ['同意', 1, 'qq:accept']].forEach(function (bt) {
+      var bx = bt[1] * (bw / 2 + sw * 0.035);
+      rr(bx - bw / 2, by, bw, bh, bh * 0.28);
+      if (bt[0] === '同意') {
+        ctx.fillStyle = 'rgba(58,96,74,.72)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(140,178,150,.45)';
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.035)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(176,84,62,.55)';
+      }
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + (fs * 0.86) + 'px ' + SERIF;
+      ctx.fillStyle = bt[0] === '同意' ? 'rgba(226,232,214,.96)' : 'rgba(196,110,88,.92)';
+      ctx.fillText(bt[0], bx, by + bh * 0.52);
+
+      var p = pageOf(bx, by + bh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: bt[2], x: p.x, y: p.y, r: Math.max(bh * 0.75, fs * 1.7) });
+    });
+  }
+
+  function drawQQContacts(sw, sh, g, el, fs, top) {
+    var rh = sh * 0.082;
+    var y0 = top + sh * 0.05;
+
+    QQ_MEMBERS.forEach(function (m, i) {
+      var y = y0 + i * rh;
+      var av = sw * 0.072;
+      rr(-sw * 0.42, y + rh * 0.12, av, av, av * 0.24);
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      ctx.fill();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 ' + (av * 0.42) + 'px ' + SERIF;
+      ctx.fillStyle = m.c;
+      ctx.fillText(m.ch, -sw * 0.42 + av / 2, y + rh * 0.12 + av * 0.53);
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (fs * 0.88) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(222,218,202,.92)';
+      ctx.fillText(m.n, -sw * 0.30, y + rh * 0.42);
+
+      ctx.font = (fs * 0.68) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(140,152,134,.68)';
+      ctx.fillText(m.r, -sw * 0.30, y + rh * 0.78);
+
+      ctx.fillStyle = 'rgba(125,155,98,.10)';
+      ctx.fillRect(-sw * 0.42, y + rh - 1, sw * 0.84, 1);
+
+      // 点开这行 = 私聊（自己那行不点）
+      if (i < QQ_MEMBERS.length - 1) {
+        ctx.textAlign = 'right';
+        ctx.font = (fs * 0.86) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(140,152,134,.42)';
+        ctx.fillText('›', sw * 0.40, y + rh * 0.46);
+        var cp = pageOf(0, y + rh * 0.5, g.cx, g.cy, g.tilt);
+        hotspots.push({ id: 'qq:pcm:' + i, x: cp.x, y: cp.y, r: Math.max(rh * 0.62, sw * 0.11) });
+      }
+    });
+  }
+
+  // 群聊 / 私聊共用的一块滚动区（可以往上翻）
+  function qqFlow(items, sw, sh, fs, clipTop, clipBot, hotFn) {
+    var heights = [];
+    items.forEach(function (m) { heights.push(qqItemH(m, sw, sh, fs)); });
+
+    var total = 0;
+    heights.forEach(function (h) { total += h; });
+    var area = clipBot - clipTop;
+    var baseY, maxS = 0;
+
+    if (total <= area - sh * 0.02) {
+      baseY = clipTop + sh * 0.015;
+      qqScroll = 0;
+    } else {
+      maxS = total - area + sh * 0.02;
+      qqScroll = Math.max(0, Math.min(maxS, qqScroll));
+      baseY = clipBot - sh * 0.02 - total + qqScroll;
+    }
+    qqScrollMax = maxS;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-sw / 2, clipTop, sw, area);
+    ctx.clip();
+
+    var y = baseY;
+    for (var i = 0; i < items.length; i++) {
+      qqItemDraw(items[i], y, sw, sh, fs);
+      // 只给露出来的那些挂热点
+      if (hotFn && y > clipTop - sh * 0.03 && y < clipBot) hotFn(items[i], y);
+      y += heights[i];
+    }
+
+    // 顶部渐隐，表示上面还有
+    var fade = ctx.createLinearGradient(0, clipTop, 0, clipTop + sh * 0.05);
+    fade.addColorStop(0, 'rgba(7,11,9,.95)');
+    fade.addColorStop(1, 'rgba(7,11,9,0)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(-sw / 2, clipTop, sw, sh * 0.05);
+
+    ctx.restore();
+  }
+
+  // 现在显示到第几条
+  function qqShownCount(el) {
+    if (qqForce >= 0) return Math.min(QQ_CHAT.length, qqForce + 1);
+    return Math.min(QQ_CHAT.length, Math.max(1, Math.floor((el - qqChatT0) / QQ_STEP) + 1));
+  }
+
+  // 「回到最新」小胶囊
+  function drawQQLatest(sw, sh, g, fs, clipBot) {
+    var bw = sw * 0.24, bh = sh * 0.038;
+    var by = sh * 0.452;            // 落在消息区下面，别压住正文
+    rr(-bw / 2, by, bw, bh, bh / 2);
+    ctx.fillStyle = 'rgba(22,32,26,.9)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,175,150,.24)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = (fs * 0.60) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(200,212,192,.92)';
+    ctx.fillText('↓ 最新', 0, by + bh * 0.54);
+    var p = pageOf(0, by + bh * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: 'qq:latest', x: p.x, y: p.y, r: Math.max(20, bh * 0.95) });
+  }
+  function drawQQChat(sw, sh, g, el, fs, hy, hh) {
+    var pc = (qqView === 'pchat');
+    var mem = QQ_MEMBERS[qqPc];
+
+    // 返回
+    ctx.textAlign = 'left';
+    ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(190,200,176,.9)';
+    ctx.fillText('‹', -sw * 0.44, hy + hh * 0.52);
+    var bp = pageOf(-sw * 0.40, hy + hh * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: 'qq:chatback', x: bp.x, y: bp.y, r: Math.max(22, fs * 2.2) });
+
+    // 标题：群名 / 对方名字
+    var title = pc ? mem.n : QQ_GROUP;
+    var nm = fs * 0.80;
+    ctx.font = '600 ' + nm + 'px ' + SERIF;
+    while (ctx.measureText(title).width > sw * 0.56 && nm > 8) { nm -= 0.4; ctx.font = '600 ' + nm + 'px ' + SERIF; }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(226,222,206,.95)';
+    ctx.fillText(title, 0, hy + hh * 0.40);
+
+    ctx.font = (fs * 0.60) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(134,146,128,.62)';
+    ctx.fillText(pc ? '私 人 频 道 · 勿 外 传' : '7 人 · 内部群', 0, hy + hh * 0.74);
+
+    var clipTop = hy + hh + sh * 0.012;
+    var clipBot = sh * 0.448;
+
+    if (pc) {
+      qqFlow(QQ_PRIVATE[qqPc] || [], sw, sh, fs, clipTop, clipBot, null);
+      return;
+    }
+
+    // 逐条出现
+    var step = QQ_STEP;
+    var shown = qqShownCount(el);
+    if (shown >= QQ_CHAT.length) qqChatDone = true;
+
+    var items = QQ_CHAT.slice(0, shown);
+
+    // 我回的这句 + 后面跟着的回话
+    if (qqSent) {
+      qqMine.forEach(function (m) {
+        if (el - qqSentAt >= m.at) items.push(m);
+      });
+    }
+
+    qqFlow(items, sw, sh, fs, clipTop, clipBot, function (m, top) {
+      if (m.sys || m.own || m.m >= 6) return;   // 自己的话不给点
+      var av = sw * 0.058;
+      var p = pageOf(-sw * 0.42 + av / 2, top + av * 0.55, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'qq:pcm:' + m.m, x: p.x, y: p.y, r: Math.max(14, av * 1.05) });
+    });
+
+    // 翻上去了：给个回底的小胶囊
+    if (qqScroll > 1) drawQQLatest(sw, sh, g, fs, clipBot);
+
+    // 全部说完 → 底下露出回话条（翻上去看旧消息时先收起来）
+    var ready = qqForce >= 0
+      ? shown >= QQ_CHAT.length
+      : (el - qqChatT0) > (QQ_CHAT.length - 1) * step + 400;
+    if (!qqSent && ready && qqScroll < 1) drawQQReply(sw, sh, g, fs);
+  }
+
+  // 群聊底下的回话条：输入框样子 + 两个能点的回话
+  function drawQQReply(sw, sh, g, fs) {
+    var by = sh * 0.446, bh = sh * 0.042;
+
+    rr(-sw * 0.42, by, sw * 0.24, bh, bh * 0.34);
+    ctx.fillStyle = 'rgba(255,255,255,.04)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200,210,190,.10)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = (fs * 0.62) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(128,140,124,.55)';
+    ctx.fillText('说点什么…', -sw * 0.42 + sw * 0.022, by + bh * 0.52);
+
+    [['我就想看看魔法阵', 0], ['应该没事吧！', 1]].forEach(function (bt, i) {
+      var bw = sw * 0.278;
+      var bx = -sw * 0.16 + i * (bw + sw * 0.02);
+      rr(bx, by, bw, bh, bh * 0.34);
+      ctx.fillStyle = i === 1 ? 'rgba(255,255,255,.05)' : 'rgba(58,88,110,.60)';
+      ctx.fill();
+      ctx.strokeStyle = i === 1 ? 'rgba(200,210,190,.14)' : 'rgba(123,162,200,.42)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      var bs = fs * 0.60;
+      ctx.font = '600 ' + bs + 'px ' + SERIF;
+      while (ctx.measureText(bt[0]).width > bw - sw * 0.02 && bs > 7) { bs -= 0.4; ctx.font = '600 ' + bs + 'px ' + SERIF; }
+      ctx.fillStyle = i === 1 ? 'rgba(208,214,198,.92)' : 'rgba(224,234,242,.96)';
+      ctx.fillText(bt[0], bx + bw / 2, by + bh * 0.54);
+      var p = pageOf(bx + bw / 2, by + bh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'qq:send:' + bt[1], x: p.x, y: p.y, r: Math.max(18, bh * 0.75) });
+    });
+  }
+
+  // 我回过的话（两条分支各自的反应）
+  var QQ_REPLY = {
+    look: {
+      txt: '我就想看看魔法阵',
+      after: [
+        { m: 5, t: '谁在打字？', at: 1200, tm: '04:02' },
+        { m: 4, t: '……元首从来不打字。他只会打kook。', at: 2700, tm: '04:02' },
+        { m: 2, t: '那边那位，请别再动手了。', at: 4200, tm: '04:03' }
+      ]
+    },
+    fine: {
+      txt: '应该没事吧！',
+      after: [
+        { m: 5, t: '别用那个句话！', at: 1200, tm: '04:02' },
+        { m: 4, t: '他说过，说「应该没事吧！」的人，后来都不在了。', at: 2900, tm: '04:03' }
+      ]
+    }
+  };
+
+  // 我回一句，群里立刻有反应
+  function qqSend(kind) {
+    if (qqSent) return;
+    var rp = QQ_REPLY[kind === 1 ? 'fine' : 'look'];
+    qqSent = true;
+    qqSentAt = elNow();
+    qqMine = [{ m: 6, own: true, n: 'Gun7z', t: rp.txt, at: 0, tm: '04:02' }].concat(rp.after);
+    tone(560, 720, 0.12, 'sine', 0.012);
+  }
+  // 一条消息占多高（要先定字体再量）
+  function qqItemH(m, sw, sh, fs) {
+    var av = sw * 0.058;
+    if (m.sys) return av * 1.1 + sh * 0.022;
+    if (m.own) {
+      var ots0 = fs * 0.80;
+      ctx.font = '400 ' + ots0 + 'px ' + SERIF;
+      var ol0 = wrapLines(m.t, sw * 0.60, ots0);
+      return av * 1.75 + (ol0.length - 1) * ots0 * 1.5 + sh * 0.028;
+    }
+    if (m.loc) {
+      var lts2 = fs * 0.80;
+      ctx.font = '400 ' + lts2 + 'px ' + SERIF;
+      var ll = wrapLines(m.t || '', sw * 0.66, lts2);
+      return av * 1.75 + ll.length * lts2 * 1.5 + sh * 0.014 + sh * 0.105 + sh * 0.022;
+    }
+    var ts = fs * 0.80;
+    ctx.font = '400 ' + ts + 'px ' + SERIF;
+    var lines = wrapLines(m.t, sw * 0.66, ts);
+    return av * 1.75 + (lines.length - 1) * ts * 1.5 + sh * 0.028;
+  }
+
+  // 画一条消息（top 是这条的顶边）
+  function qqItemDraw(m, top, sw, sh, fs) {
+    var av = sw * 0.058;
+
+    if (m.sys) {
+      ctx.textAlign = 'center';
+      ctx.font = (fs * 0.62) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(130,142,124,.55)';
+      ctx.fillText(m.sys, 0, top + av * 0.55);
+      return;
+    }
+
+    // 我自己发的：头像靠右、字右对齐
+    if (m.own) {
+      var oav = sw * 0.058;
+      rr(sw * 0.42 - oav, top, oav, oav, oav * 0.22);
+      ctx.fillStyle = 'rgba(110,150,120,.16)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(160,190,160,.16)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 ' + (oav * 0.42) + 'px ' + SERIF;
+      ctx.fillStyle = '#dcd6c0';
+      ctx.fillText('你', sw * 0.42 - oav / 2, top + oav * 0.55);
+
+      var orx = sw * 0.42 - oav * 1.28;
+      var oname = m.n || '你';
+      ctx.textAlign = 'right';
+      ctx.font = (fs * 0.60) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(136,148,130,.62)';
+      ctx.fillText('本机', orx, top + oav * 0.42);
+      var ow = ctx.measureText('本机').width;
+      ctx.font = '600 ' + (fs * 0.74) + 'px ' + SERIF;
+      ctx.fillStyle = '#dcd6c0';
+      ctx.fillText(oname, orx - ow - fs * 0.45, top + oav * 0.40);
+
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.58) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(128,140,124,.55)';
+      ctx.fillText(m.tm || '', -sw * 0.42, top + oav * 0.40);
+
+      var ots = fs * 0.80;
+      ctx.textAlign = 'right';
+      ctx.font = '400 ' + ots + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(206,222,212,.92)';
+      wrapLines(m.t, sw * 0.60, ots).forEach(function (ln, li) {
+        ctx.fillText(ln, orx, top + oav * 1.75 + li * ots * 1.5);
+      });
+      return;
+    }
+
+    var mem = QQ_MEMBERS[m.m];
+
+    // 头像
+    rr(-sw * 0.42, top, av, av, av * 0.22);
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + (av * 0.42) + 'px ' + SERIF;
+    ctx.fillStyle = mem.c;
+    ctx.fillText(mem.ch, -sw * 0.42 + av / 2, top + av * 0.55);
+
+    // 名字 + 身份
+    var nx = -sw * 0.42 + av * 1.28;
+    ctx.textAlign = 'left';
+    var ns = fs * 0.74;
+    ctx.font = '600 ' + ns + 'px ' + SERIF;
+    ctx.fillStyle = mem.c;
+    ctx.fillText(mem.n, nx, top + av * 0.40);
+    var nameW = ctx.measureText(mem.n).width;
+
+    ctx.font = (fs * 0.60) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(136,148,130,.62)';
+    ctx.fillText(mem.r, nx + nameW + fs * 0.45, top + av * 0.42);
+
+    ctx.textAlign = 'right';
+    ctx.font = (fs * 0.58) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(128,140,124,.55)';
+    ctx.fillText(m.tm || '', sw * 0.40, top + av * 0.40);
+
+    // 位置卡片
+    if (m.loc) {
+      // 正文
+      var lts = fs * 0.80;
+      ctx.textAlign = 'left';
+      ctx.font = '400 ' + lts + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(224,220,204,.90)';
+      var ltxt = wrapLines(m.t || '', sw * 0.66, lts);
+      ltxt.forEach(function (ln, li) {
+        ctx.fillText(ln, nx, top + av * 1.75 + li * lts * 1.5);
+      });
+
+      var cardY = top + av * 1.75 + ltxt.length * lts * 1.5 + sh * 0.014;
+      var cardH = sh * 0.105;
+      rr(-sw * 0.42 + av * 1.28, cardY, sw * 0.62, cardH, sw * 0.02);
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(140,170,200,.30)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (fs * 0.74) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(224,220,204,.94)';
+      ctx.fillText(m.loc[0], -sw * 0.42 + av * 1.28 + sw * 0.035, cardY + cardH * 0.34);
+
+      ctx.font = (fs * 0.66) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(142,154,136,.75)';
+      ctx.fillText(m.loc[1], -sw * 0.42 + av * 1.28 + sw * 0.035, cardY + cardH * 0.68);
+
+      // 卡里的小图钉
+      ctx.textAlign = 'right';
+      ctx.font = (fs * 1.0) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(140,170,200,.55)';
+      ctx.fillText('⌖', -sw * 0.42 + av * 1.28 + sw * 0.62 - sw * 0.03, cardY + cardH * 0.52);
+      return;
+    }
+
+    // 正文
+    ctx.textAlign = 'left';
+    var ts = fs * 0.80;
+    ctx.font = '400 ' + ts + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(224,220,204,.90)';
+    var lines = wrapLines(m.t, sw * 0.66, ts);
+    lines.forEach(function (ln, li) {
+      ctx.fillText(ln, nx, top + av * 1.75 + li * ts * 1.5);
+    });
+  }
+
+  // 按宽度折行（中文够用）
+  function wrapLines(str, maxW, size) {
+    var out = [], cur = '';
+    for (var i = 0; i < str.length; i++) {
+      var ch = str.charAt(i);
+      // 标点不许单独起一行，宁可让上一行多挤一个字
+      if (cur && ctx.measureText(cur + ch).width > maxW && !/^[，。！？…、；：」』）]/.test(ch)) { out.push(cur); cur = ch; }
+      else cur += ch;
+    }
+    if (cur) out.push(cur);
+    // 末行只剩标点、或只剩一两个字，就并回上一行，免得吊在半空
+    while (out.length > 1) {
+      var last = out[out.length - 1];
+      if (/^[，。！？…、；：」』）]+$/.test(last) || last.length <= 2) {
+        out[out.length - 2] += last;
+        out.pop();
+      } else break;
+    }
+    return out;
+  }
+
+  // QQ 的交互
+  function qqAction(id) {
+    if (id.indexOf('key:') === 0) {
+      var k = id.slice(4);
+      if (k === '退') { qqPass = qqPass.slice(0, -1); cueTap(); return; }
+      if (k === '登') { qqSubmit(); return; }
+      if (qqPass.length < 8) { qqPass += k; cueTap(); }
+      return;
+    }
+    if (id.indexOf('tab:') === 0) { qqTab = id.slice(4); qqView = 'list'; cueTap(); return; }
+    if (id.indexOf('pcm:') === 0) { qqPc = +id.slice(4); qqView = 'pchat'; qqScroll = 0; cueTap(); return; }
+    if (id.indexOf('send:') === 0) {
+      qqSend(id === 'send:0' ? 0 : 1);
+      return;
+    }
+    if (id === 'group') {
+      // 已经看完就不用重播；看了一半就接着走
+      qqView = 'chat';
+      qqScroll = 0;
+      qqChatT0 = qqChatDone ? -99999999 : elNow() - Math.max(0, qqChatShown - 1) * QQ_STEP;
+      cueTap();
+      return;
+    }
+    if (id === 'chatback') {
+      if (qqView === 'chat') {
+        qqChatShown = qqShownCount(elNow());
+        qqChatDone = qqChatShown >= QQ_CHAT.length;
+      }
+      qqScroll = 0;
+      qqView = 'list';
+      cueTap();
+      return;
+    }
+    if (id === 'latest') { qqScroll = 0; cueTap(); return; }
+    if (id === 'accept') {
+      qqJoined = true;
+      qqTab = 'msg';
+      qqView = 'list';
+      tone(420, 640, 0.16, 'sine', 0.02);
+      tone(640, 900, 0.18, 'sine', 0.014);
+      return;
+    }
+    if (id === 'reject') {           // 拒绝 → 暗杀线
+      if (AC) { cueHang(); }
+      setStage('kill');
+      return;
+    }
+  }
+
+  function qqSubmit() {
+    if (qqPass === QQ_PW) {
+      qqState = 'main';
+      qqTab = 'msg';
+      qqView = 'list';
+      phAdvance('04:15');   // 登进 QQ，手机上的时间往前走了
+      tone(520, 780, 0.18, 'sine', 0.02);
+    } else {
+      qqErrAt = elNow();
+      qqPass = '';
+      tone(240, 160, 0.14, 'square', 0.012);
+    }
+  }
+
+  function qqReset() {
+    qqForce = -1;
+    qqPc = 0;
+    qqMine = [];
+    qqSent = false;
+    qqSentAt = -99999;
+    qqChatDone = false;
+    qqChatShown = 1;
+    qqScroll = 0;
+    qqScrollMax = 0;
+    chatDrag = null;
+    qqChatT0 = 0;
+    qqState = 'login';
+    qqPass = '';
+    qqErrAt = -99999;
+    qqTab = 'msg';
+    qqView = 'list';
+    qqJoined = false;
+  }
+
+
+  /* ---------- 阶段四：应用内 ---------- */
+  var APP_DATA = {
+    time: {
+      title: '时间表',
+      head: '今夜 · 值班表',
+      tabs: ['今日', '本周', '月'],
+      rows: [
+        ['02:00', '值班专线 · 来电', '已接通'],
+        ['05:00', '闹钟 · 起床', '已设'],
+        ['09:00', '交接班 · 三层值班室', '已签到'],
+        ['13:30', '议事厅 · 例会', '例行'],
+        ['18:00', '办公厅 · 封档', '待办']
+      ]
+    },
+    call: {
+      title: '电话',
+      head: '通话记录',
+      tabs: ['最近', '通讯录', '拨号'],
+      rows: [
+        ['洛亚提办公厅', '03:47 · 00:07', '来电'],
+        ['10086111314', '昨日 · 未接', '未接'],
+        ['总机 0001', '前日 · 14 秒', '拨出']
+      ]
+    },
+    sms: {
+      title: '短信',
+      head: '未读 1',
+      tabs: ['全部', '未读', '垃圾'],
+      rows: [
+        ['洛亚提办公厅', '委任令已签发，请查收。', '03:52'],
+        ['未知号码', '别接第二通。', '03:41'],
+        ['总机', '本月值班表已更新。', '昨天']
+      ]
+    },
+    wechat: {
+      title: '微信',
+      head: '消息',
+      tabs: ['微信', '通讯录', '发现', '我'],
+      rows: [
+        ['办公厅值班群', '[3 条] 今晚灯又闪了。', '03:49'],
+        ['内务处 · 周', '你接了吗？', '03:46'],
+        ['老 K', '别去三层。', '昨天']
+      ]
+    },
+    qq: {
+      title: 'QQ',
+      head: '会话',
+      tabs: ['消息', '联系人', '动态'],
+      rows: [
+        ['洛亚提 · 内勤组', '今夜有人进楼。', '03:44'],
+        ['办公厅', '文件已封存。', '昨天'],
+        ['K', '收到请回。', '前天']
+      ]
+    },
+    browser: {
+      title: '浏览器',
+      head: 'lyn.intra/wiki',
+      tabs: ['‹', '›', '主页', '标签']
+    }
+  };
+
+  function drawAppView(el) {
+    var g = homeGeom();
+    stageBg(1, el);
+
+    phoneFrame(g.cx, g.cy, g.w, g.tilt, 1, 1, function (sw, sh) {
+      var d = APP_DATA[appOpen] || APP_DATA.time;
+      var fs = Math.max(10, sw * 0.042);
+
+      ctx.fillStyle = '#070b09';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      // 状态栏
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.72) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(158,170,150,.66)';
+      ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 0.95);
+      ctx.textAlign = 'right';
+      ctx.fillText('86%', sw * 0.42, -sh / 2 + fs * 0.95);
+
+      // 标题栏
+      var hy = -sh / 2 + fs * 1.75;
+      var hh = sh * 0.082;
+      ctx.fillStyle = 'rgba(255,255,255,.028)';
+      ctx.fillRect(-sw / 2, hy, sw, hh);
+      ctx.fillStyle = 'rgba(125,155,98,.16)';
+      ctx.fillRect(-sw / 2, hy + hh, sw, 1);
+
+      // 返回
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(190,200,176,.9)';
+      ctx.fillText('‹', -sw * 0.44, hy + hh * 0.52);
+
+      var back = pageOf(-sw * 0.40, hy + hh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'back', x: back.x, y: back.y, r: Math.max(22, fs * 2.2) });
+
+      // 标题 + 应用色细线
+      var ac = 'rgba(160,172,152,1)';
+      for (var k = 0; k < APPS.length; k++) { if (APPS[k].id === appOpen) ac = APPS[k].ac; }
+      ctx.textAlign = 'center';
+      ctx.font = '600 ' + (fs * 1.0) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(226,222,206,.95)';
+      ctx.fillText(d.title, 0, hy + hh * 0.52);
+      ctx.fillStyle = ac;
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(-sw * 0.045, hy + hh + 2, sw * 0.09, Math.max(1, sw * 0.003));
+      ctx.globalAlpha = 1;
+
+      // 浏览器地址栏
+      var listTop = hy + hh + sh * 0.035;
+      if (appOpen === 'browser') {
+        var barH = sh * 0.055;
+        rr(-sw * 0.40, listTop, sw * 0.80, barH, barH * 0.3);
+        ctx.fillStyle = 'rgba(255,255,255,.05)';
+        ctx.fill();
+        ctx.textAlign = 'left';
+        ctx.font = (fs * 0.72) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(150,166,146,.9)';
+        ctx.fillText(d.head, -sw * 0.36, listTop + barH * 0.52);
+        listTop += barH + sh * 0.028;
+      } else {
+        ctx.textAlign = 'left';
+        ctx.font = (fs * 0.70) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(132,146,124,.8)';
+        ctx.fillText(d.head, -sw * 0.40, listTop + fs * 0.5);
+        listTop += sh * 0.045;
+      }
+
+      // 列表
+      var rh = sh * 0.088;
+      d.rows.forEach(function (row, i) {
+        var y = listTop + i * rh;
+
+        ctx.fillStyle = 'rgba(125,155,98,.10)';
+        ctx.fillRect(-sw * 0.42, y + rh - 1, sw * 0.84, 1);
+
+        ctx.textAlign = 'left';
+        ctx.font = '600 ' + (fs * (row[0].charAt(0) >= '0' && row[0].charAt(0) <= '9' ? 1.02 : 1.0)) + 'px '
+          + (row[0].charAt(0) >= '0' && row[0].charAt(0) <= '9' ? MONO : SERIF);
+        ctx.fillStyle = 'rgba(224,220,204,.94)';
+        ctx.fillText(row[0], -sw * 0.40, y + rh * 0.36);
+
+        ctx.font = (fs * 0.74) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,158,140,.78)';
+        ctx.fillText(row[1], -sw * 0.40, y + rh * 0.70);
+
+        ctx.textAlign = 'right';
+        ctx.font = (fs * 0.70) + 'px ' + MONO;
+        ctx.fillStyle = (row[2] === '未接' || row[2] === '受限')
+          ? 'rgba(176,84,62,.9)' : 'rgba(140,152,132,.72)';
+        ctx.fillText(row[2], sw * 0.40, y + rh * 0.36);
+      });
+
+      // 底部导航：只是样子，第一项为当前页
+      var tabs = d.tabs || [];
+      var tby = sh * 0.425;
+      ctx.fillStyle = 'rgba(255,255,255,.022)';
+      ctx.fillRect(-sw / 2, tby - sh * 0.037, sw, sh * 0.037 * 2);
+      ctx.fillStyle = 'rgba(125,155,98,.14)';
+      ctx.fillRect(-sw / 2, tby - sh * 0.037, sw, 1);
+      tabs.forEach(function (t, i) {
+        var tx = (-0.43 + (i + 0.5) * (0.86 / tabs.length)) * sw;
+        ctx.textAlign = 'center';
+        ctx.font = (i === 0 ? '600 ' : '400 ') + (fs * 0.76) + 'px ' + (i === 0 ? SERIF : MONO);
+        ctx.fillStyle = i === 0 ? ac : 'rgba(136,148,128,.55)';
+        ctx.fillText(t, tx, tby + fs * 0.2);
+      });
+    });
+  }
+
+
+﻿  /* ---------- 阶段四 C：微信 ---------- */
+  var PH_CLOCK = '03:47';          // 手机上的时间，随剧情往前走
+  function phAdvance(t) {           // 时间只会往前走
+    var a = +PH_CLOCK.slice(0, 2) * 60 + +PH_CLOCK.slice(3, 5);
+    var b = +t.slice(0, 2) * 60 + +t.slice(3, 5);
+    if (b > a) PH_CLOCK = t;
+  }
+  var WX_PW = '7233', WX_PHONE = '10086111314', WX_CODE = '7878';
+  var wxState = 'login';           // login / verify / main / info / discover / moments / cg / me / svc / money
+  var wxPW = '', wxPhone = '', wxCode = '', wxField = 'pw';
+  var wxErr = '', wxSent = false, wxSentAt = 0, wxCoded = false;
+  var wxBannerAt = 0, wxBannerOn = false, wxTabI = 0;
+  var cgIdx = 0, cgT0 = 0, cgCue = [0, 0, 0];
+  var alarmAt = -1, alarmStart = -1, powered = true, shutFade = -1;
+
+  function wxReset() {
+    wxState = 'login'; wxPW = ''; wxPhone = ''; wxCode = ''; wxField = 'pw';
+    wxErr = ''; wxSent = false; wxSentAt = 0; wxCoded = false;
+    wxBannerOn = false; wxTabI = 0;
+    cgIdx = 0; cgT0 = 0; cgCue = [0, 0, 0];
+    alarmAt = -1; alarmStart = -1; powered = true; shutFade = -1;
+    PH_CLOCK = '03:47';
+  }
+
+  function cueMsg() {
+    tone(1046, 1046, 0.12, 'sine', 0.020);
+    tone(1046, 1046, 0.13, 'sine', 0.020, 0.22);
+    hiss(0.20, 'bandpass', 2400, 2, 0.012, 0.02);
+  }
+  // 闹钟：两段急促的电子铃
+  function cueAlarm() {
+    for (var k = 0; k < 2; k++) {
+      var d0 = k * 1.05;
+      for (var i = 0; i < 6; i++) {
+        tone(1240, 1240, 0.055, 'square', 0.022, d0 + i * 0.085);
+        tone(880, 880, 0.055, 'square', 0.020, d0 + i * 0.085 + 0.042);
+      }
+    }
+  }
+
+  function wxKey(k) {
+    if (k === 'del') {
+      if (wxField === 'pw') wxPW = wxPW.slice(0, -1);
+      else if (wxField === 'phone') wxPhone = wxPhone.slice(0, -1);
+      else wxCode = wxCode.slice(0, -1);
+    } else {
+      if (wxField === 'pw' && wxPW.length < 4) wxPW += k;
+      else if (wxField === 'phone' && wxPhone.length < 11) wxPhone += k;
+      else if (wxField === 'code' && wxCode.length < 4) wxCode += k;
+    }
+    wxErr = '';
+    cueTap();
+  }
+
+  function wxSubmit() {
+    if (wxState === 'login') {
+      if (wxPW === WX_PW) { wxState = 'verify'; wxField = 'phone'; wxErr = ''; wxTabI = 0; cueAnswer(); }
+      else { wxErr = '密码错误'; wxPW = ''; sfxOff(); }
+      return;
+    }
+    if (!wxCoded) { wxErr = '先发验证码'; sfxOff(); return; }
+    if (wxPhone !== WX_PHONE) { wxErr = '手机号不对'; sfxOff(); return; }
+    if (wxCode !== WX_CODE) { wxErr = '验证码不对'; wxCode = ''; sfxOff(); return; }
+    wxState = 'main'; phAdvance('04:45'); cueStat(); cueAnswer();
+  }
+
+  function wxAction(a) {
+    if (a === 'back') {
+      if (wxState === 'money') { wxState = 'svc'; cueTap(); return; }
+      if (wxState === 'svc') { wxState = 'me'; cueTap(); return; }
+      if (wxState === 'cg') return;   // CG 不能打断
+      if (wxState === 'moments') { wxState = 'discover'; cueTap(); return; }
+      if (wxState === 'me' || wxState === 'discover' || wxState === 'info') {
+        wxState = 'main'; wxTabI = 0; cueTap(); return;
+      }
+      if (wxState === 'main') { setStage('home'); cueTap(); return; }
+      if (wxState === 'verify') { wxState = 'login'; wxField = 'pw'; wxErr = ''; cueTap(); return; }
+      setStage('home'); return;
+    }
+    if (a === 'login' || a === 'next') { wxSubmit(); return; }
+    if (a === 'send') {
+      if (wxPhone.length < 11) { wxErr = '请输入手机号'; sfxOff(); return; }
+      if (!wxSent) {
+        wxSent = true; wxSentAt = performance.now();
+        wxField = 'code'; wxErr = '';
+        cueAnswer();
+      }
+      return;
+    }
+    if (a === 'srv') { wxState = 'svc'; cueTap(); return; }
+    if (a === 'money') { wxState = 'money'; cueTap(); return; }
+    if (a === 'moments') {
+      wxState = 'moments';
+      phAdvance('05:00');
+      if (alarmAt < 0) alarmAt = performance.now() + 15000;   // 一直不点视频也会响
+      cueTap();
+      return;
+    }
+    if (a.indexOf('cg:') === 0) {
+      cgIdx = +a.slice(3);
+      cgT0 = performance.now();
+      cgCue = [0, 0, 0];
+      wxState = 'cg';
+      hiss(0.6, 'bandpass', 1200, 1, 0.02);
+      cueTap();
+      return;
+    }
+    if (a.indexOf('k:') === 0) { wxKey(a.slice(2)); return; }
+    if (a.indexOf('f:') === 0) {
+      var f = a.slice(2);
+      if (f === 'pw' && wxState === 'login') wxField = 'pw';
+      if (f === 'phone' && wxState === 'verify') wxField = 'phone';
+      if (f === 'code' && wxState === 'verify') wxField = 'code';
+      cueTap();
+      return;
+    }
+    if (a.indexOf('tab:') === 0) {
+      var i = +a.slice(4);
+      wxTabI = i;
+      if (i === 0) wxState = 'main';
+      else if (i === 1) wxState = 'info';
+      else if (i === 2) wxState = 'discover';
+      else wxState = 'me';
+      cueTap();
+    }
+  }
+
+  // 顶部落下来的验证码条
+  function wxBanner(sw, sh) {
+    if (!wxBannerOn) return;
+    var dt = performance.now() - wxBannerAt;
+    if (dt > 5200) { wxBannerOn = false; return; }
+    var p = Math.min(1, dt / 240);
+    var out = dt > 4500 ? Math.min(1, (dt - 4500) / 650) : 0;
+    var h = sh * 0.105;
+    var y = -sh / 2 + sh * 0.015 - (1 - p) * h - out * h;
+
+    rr(-sw * 0.43, y, sw * 0.86, h, h * 0.22);
+    ctx.fillStyle = 'rgba(24,30,26,.97)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140,180,120,.30)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 ' + (sh * 0.0155) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(126,178,116,.95)';
+    ctx.fillText('微信', -sw * 0.385, y + h * 0.28);
+    ctx.textAlign = 'right';
+    ctx.font = (sh * 0.0125) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(150,160,146,.62)';
+    ctx.fillText('现在', sw * 0.395, y + h * 0.28);
+
+    ctx.textAlign = 'left';
+    ctx.font = (sh * 0.0190) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(226,222,206,.95)';
+    ctx.fillText('验证码 7878，5 分钟内有效。', -sw * 0.385, y + h * 0.64);
+  }
+
+  function wxPad(sw, sh, g, y0) {
+    var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
+    var cw = sw * 0.245, ch = sh * 0.075, gx = sw * 0.020, gy = sh * 0.012;
+    keys.forEach(function (k, i) {
+      var c = i % 3, r = Math.floor(i / 3);
+      var x = -sw * 0.40 + c * (cw + gx);
+      var y = y0 + r * (ch + gy);
+      rr(x, y, cw, ch, ch * 0.22);
+      ctx.fillStyle = k === 'ok' ? 'rgba(90,140,96,.30)' : 'rgba(255,255,255,.05)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,210,190,.10)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (k === 'del') {
+        ctx.font = (sh * 0.025) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(190,196,180,.82)';
+        ctx.fillText('⌫', x + cw / 2, y + ch * 0.54);
+      } else if (k === 'ok') {
+        ctx.font = '600 ' + (sh * 0.020) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(208,224,198,.95)';
+        ctx.fillText('确定', x + cw / 2, y + ch * 0.54);
+      } else {
+        ctx.font = (sh * 0.028) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(226,222,206,.92)';
+        ctx.fillText(k, x + cw / 2, y + ch * 0.52);
+      }
+      var p = pageOf(x + cw / 2, y + ch / 2, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'wx:k:' + k, x: p.x, y: p.y, r: Math.max(14, cw * 0.34) });
+    });
+  }
+
+  function wxFieldBox(sw, sh, g, y, label, val, active, mask, fid) {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = (sh * 0.0135) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(146,160,140,.62)';
+    ctx.fillText(label, -sw * 0.395, y - sh * 0.011);
+
+    var bh = sh * 0.072;
+    rr(-sw * 0.40, y, sw * 0.80, bh, bh * 0.16);
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    ctx.fill();
+    ctx.strokeStyle = active ? 'rgba(150,190,130,.45)' : 'rgba(200,210,190,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    var shown = mask ? new Array(val.length + 1).join('•') : val;
+    ctx.font = (sh * 0.0195) + 'px ' + (mask ? SERIF : MONO);
+    ctx.fillStyle = val ? 'rgba(228,224,208,.95)' : 'rgba(150,160,146,.30)';
+    ctx.fillText(shown, -sw * 0.365, y + bh * 0.54);
+
+    if (active && Math.floor(performance.now() / 500) % 2 === 0) {
+      var cw2 = ctx.measureText(shown).width;
+      ctx.fillStyle = 'rgba(190,210,170,.8)';
+      ctx.fillRect(-sw * 0.365 + cw2 + 2, y + bh * 0.29, Math.max(1, sw * 0.0022), bh * 0.44);
+    }
+
+    if (fid) {
+      var p = pageOf(0, y + bh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'wx:f:' + fid, x: p.x, y: p.y, r: Math.max(24, bh * 0.9) });
+    }
+    return y + bh;
+  }
+
+  function wxBtn(sw, sh, g, y, label, id, dim) {
+    var bh = sh * 0.066;
+    rr(-sw * 0.40, y, sw * 0.80, bh, bh * 0.13);
+    ctx.fillStyle = dim ? 'rgba(90,120,92,.16)' : 'rgba(88,140,96,.36)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,190,130,.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 ' + (sh * 0.0180) + 'px ' + SERIF;
+    ctx.fillStyle = dim ? 'rgba(170,180,160,.58)' : 'rgba(220,232,206,.96)';
+    ctx.fillText(label, 0, y + bh * 0.54);
+    var p = pageOf(0, y + bh * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: id, x: p.x, y: p.y, r: Math.max(24, bh * 1.0) });
+    return y + bh;
+  }
+
+  function wxTabs(sw, sh, g) {
+    var names = ['微信', '信息', '发现', '我'];
+    var tby = sh * 0.425;
+    ctx.fillStyle = 'rgba(255,255,255,.022)';
+    ctx.fillRect(-sw / 2, tby - sh * 0.036, sw, sh * 0.036 * 2);
+    ctx.fillStyle = 'rgba(125,155,98,.14)';
+    ctx.fillRect(-sw / 2, tby - sh * 0.036, sw, 1);
+    names.forEach(function (t, i) {
+      var tx = (-0.43 + (i + 0.5) * (0.86 / 4)) * sw;
+      var on = (wxTabI === i);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = (on ? '600 ' : '400 ') + (sh * 0.0175) + 'px ' + (on ? SERIF : MONO);
+      ctx.fillStyle = on ? 'rgba(150,196,140,.95)' : 'rgba(136,148,128,.55)';
+      ctx.fillText(t, tx, tby + sh * 0.005);
+      var p = pageOf(tx, tby, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'wx:tab:' + i, x: p.x, y: p.y, r: Math.max(20, sw * 0.10) });
+    });
+  }
+
+  /* ---------- 朋友圈里的三段 CG（手画的，吓人那种） ---------- */
+  var CG_TITLES = ['值班室 · 03:12', '三层的门', '魔法阵'];
+  var CG_LEN = 7.4;
+
+  // 胶片颗粒 + 偶尔的横向撕裂线
+  function cgGrain(sw, sh, heavy) {
+    var n = heavy ? 900 : 520;
+    for (var i = 0; i < n; i++) {
+      var x = Math.random() * sw - sw / 2;
+      var y = Math.random() * sh - sh / 2;
+      var a = 0.02 + Math.random() * (heavy ? 0.10 : 0.06);
+      ctx.fillStyle = (Math.random() > 0.82) ? 'rgba(255,236,220,' + a.toFixed(3) + ')'
+        : 'rgba(255,255,255,' + a.toFixed(3) + ')';
+      ctx.fillRect(x, y, 1 + Math.random() * 1.4, 1);
+    }
+    if (Math.random() > 0.86) {
+      var ty = Math.random() * sh - sh / 2;
+      ctx.fillStyle = 'rgba(210,220,200,.10)';
+      ctx.fillRect(-sw / 2, ty, sw, 1 + Math.random() * 2);
+    }
+  }
+
+  // 一张被光切过的脸：只有半边亮
+  function cgFace(x, y, r, a, light) {
+    ctx.save();
+    ctx.globalAlpha = a;
+    var grd = ctx.createRadialGradient(x - r * (light === undefined ? 0.42 : light), y - r * 0.30, r * 0.06, x, y, r * 1.15);
+    grd.addColorStop(0, 'rgba(214,204,186,0.95)');
+    grd.addColorStop(0.45, 'rgba(120,112,100,0.62)');
+    grd.addColorStop(0.85, 'rgba(28,26,24,0.30)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r * 0.80, r, 0, 0, 6.283);
+    ctx.fill();
+
+    // 眼窝（深，不描边）
+    ctx.fillStyle = 'rgba(2,4,3,.88)';
+    ctx.beginPath();
+    ctx.ellipse(x - r * 0.29, y - r * 0.17, r * 0.135, r * 0.075, -0.12, 0, 6.283);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x + r * 0.29, y - r * 0.17, r * 0.135, r * 0.075, 0.12, 0, 6.283);
+    ctx.fill();
+    // 眼里反一点光
+    ctx.fillStyle = 'rgba(216,212,196,.55)';
+    ctx.beginPath();
+    ctx.arc(x - r * 0.30, y - r * 0.175, r * 0.020, 0, 6.283);
+    ctx.fill();
+    // 鼻子阴影
+    ctx.fillStyle = 'rgba(10,12,11,.55)';
+    ctx.beginPath();
+    ctx.ellipse(x + r * 0.02, y + r * 0.10, r * 0.055, r * 0.16, 0.06, 0, 6.283);
+    ctx.fill();
+    // 嘴：一条缝
+    ctx.fillStyle = 'rgba(2,3,3,.90)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + r * 0.44, r * 0.17, r * 0.045, 0, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 三段 CG 各自的声音点位（不是配乐，是环境声和动静）
+  var CG_CUES = [
+    [{ t: 0.0, f: function () { hiss(2.2, 'highpass', 900, 0.7, 0.020); hum(6.4, 0.008); } },
+     { t: 1.5, f: function () { tone(120, 96, 0.30, 'sine', 0.014); } },
+     { t: 2.6, f: function () { hiss(0.30, 'bandpass', 2600, 3.2, 0.010); } },
+     { t: 3.4, f: function () { tone(280, 190, 0.22, 'triangle', 0.012); } },
+     { t: 4.02, f: function () { tone(900, 120, 0.26, 'sawtooth', 0.030); hiss(0.55, 'bandpass', 1800, 1.2, 0.028); } },
+     { t: 5.3, f: function () { hiss(1.6, 'bandpass', 620, 0.7, 0.018); tone(72, 58, 0.60, 'sine', 0.016); } },
+     { t: 6.8, f: function () { tone(58, 44, 0.55, 'sine', 0.018); } }],
+    [{ t: 0.0, f: function () { hiss(2.0, 'bandpass', 480, 0.6, 0.020); hum(6.4, 0.007); } },
+     { t: 1.6, f: function () { tone(96, 84, 0.36, 'sine', 0.013); } },
+     { t: 3.2, f: function () { hiss(0.26, 'bandpass', 3000, 3.4, 0.009); } },
+     { t: 4.4, f: function () { tone(220, 150, 0.30, 'triangle', 0.012); } },
+     { t: 5.2, f: function () { hiss(1.1, 'highpass', 1400, 0.6, 0.026); tone(400, 60, 0.40, 'sawtooth', 0.026); } },
+     { t: 6.5, f: function () { hiss(0.18, 'highpass', 3200, 0.8, 0.030); } }],
+    [{ t: 0.0, f: function () { hum(6.4, 0.010); hiss(6.4, 'bandpass', 700, 0.8, 0.014); } },
+     { t: 1.2, f: function () { hiss(0.9, 'bandpass', 900, 2.8, 0.012); } },
+     { t: 2.4, f: function () { hiss(1.6, 'bandpass', 400, 1.1, 0.014); tone(90, 80, 0.60, 'sine', 0.012); } },
+     { t: 4.4, f: function () { tone(160, 46, 0.50, 'sawtooth', 0.028); hiss(0.60, 'highpass', 2000, 0.9, 0.018); } },
+     { t: 6.2, f: function () { tone(60, 40, 0.50, 'sine', 0.024); hiss(0.30, 'bandpass', 1200, 1.4, 0.016); } }]
+  ];
+  function cgSound(i, t) {
+    var arr = CG_CUES[i];
+    if (!arr) return;
+    if (typeof cgCue[i] !== 'number') cgCue[i] = 0;
+    while (cgCue[i] < arr.length && t >= arr[cgCue[i]].t) {
+      try { arr[cgCue[i]].f(); } catch (e) { }
+      cgCue[i]++;
+    }
+  }
+
+  function cgScene(i, t, sw, sh) {
+    ctx.fillStyle = '#040605';
+    ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+    if (i === 0) {
+      // 值班室：灯一闪一闪，椅子上有人
+      var lamp = (Math.sin(t * 17) > 0.1) ? 1 : 0.16;
+      var lg = ctx.createRadialGradient(-sw * 0.26, -sh * 0.30, 0, -sw * 0.26, -sh * 0.30, sw * 0.82);
+      lg.addColorStop(0, 'rgba(198,188,152,' + (0.26 * lamp) + ')');
+      lg.addColorStop(0.45, 'rgba(74,70,54,' + (0.09 * lamp) + ')');
+      lg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = lg;
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      // 门框 / 桌沿
+      ctx.strokeStyle = 'rgba(140,140,124,.13)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sw * 0.14, -sh * 0.05, sw * 0.20, sh * 0.48);
+      ctx.strokeRect(-sw * 0.36, sh * 0.10, sw * 0.22, sh * 0.26);
+
+      // 椅子上的人影（越看越大）
+      var grow = Math.min(1, t / 4.2);
+      ctx.fillStyle = 'rgba(5,7,6,.92)';
+      ctx.beginPath();
+      ctx.ellipse(-sw * 0.14, -sh * 0.03, sw * (0.075 + grow * 0.015), sh * (0.125 + grow * 0.015), -0.04, 0, 6.283);
+      ctx.fill();
+      ctx.fillRect(-sw * 0.235, -sh * 0.02, sw * (0.15 + grow * 0.03), sh * 0.30);
+
+      // 两点眼睛
+      if (t > 2.4) {
+        var bl = (Math.sin(t * 5.5) > -0.7) ? 1 : 0.2;
+        ctx.fillStyle = 'rgba(226,220,200,' + (0.62 * bl) + ')';
+        ctx.beginPath();
+        ctx.ellipse(-sw * 0.196, -sh * 0.078, sw * 0.0062, sh * 0.0072, 0, 0, 6.283);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-sw * 0.108, -sh * 0.080, sw * 0.0062, sh * 0.0072, 0, 0, 6.283);
+        ctx.fill();
+      }
+
+      // 4.0 秒：脸贴上来（只闪一下）
+      if (t > 4.0 && t < 4.55) {
+        cgFace(-sw * 0.02, -sh * 0.10, sw * 0.30, (t < 4.18 ? 0.95 : 0.55), -0.50);
+      }
+      // 之后脸慢慢靠近，边缘都是黑的
+      if (t > 4.6) {
+        var k = Math.min(1, (t - 4.6) / 1.8);
+        ctx.save();
+        var vig = ctx.createRadialGradient(0, -sh * 0.06, sw * 0.10, 0, -sh * 0.06, sw * 0.62);
+        vig.addColorStop(0, 'rgba(0,0,0,0)');
+        vig.addColorStop(1, 'rgba(0,0,0,.92)');
+        cgFace(sw * 0.10, -sh * 0.09, sw * (0.24 + k * 0.14), 0.55 + k * 0.30, -0.62);
+        ctx.fillStyle = vig;
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+        ctx.restore();
+      }
+      cgGrain(sw, sh, t > 4.4);
+    }
+
+    if (i === 1) {
+      // 三层的门：门缝里的光，门后站着人
+      var open = Math.min(1, t / 4.0);
+      ctx.fillStyle = 'rgba(212,202,176,' + (0.06 + 0.42 * open) + ')';
+      ctx.fillRect(-sw * 0.01, -sh * 0.26, sw * (0.02 + open * 0.10), sh * 0.76);
+      // 两片门
+      ctx.fillStyle = 'rgba(5,7,6,.95)';
+      ctx.fillRect(-sw * 0.40, -sh * 0.32, sw * 0.36, sh * 0.82);
+      ctx.fillRect(sw * 0.10, -sh * 0.32, sw * 0.30, sh * 0.82);
+
+      // 门后那个人（只是一块更暗的形状）
+      var pIn = Math.max(0, t - 1.4);
+      if (pIn > 0) {
+        var hgt = sh * (0.40 + Math.min(0.45, pIn * 0.18));
+        ctx.fillStyle = 'rgba(3,5,4,.97)';
+        ctx.beginPath();
+        ctx.ellipse(0, sh * 0.06, sw * 0.075, hgt * 0.24, 0, 0, 6.283);
+        ctx.fill();
+        ctx.fillRect(-sw * 0.072, 0, sw * 0.14, hgt * 0.62);
+      }
+      if (t > 3.2) {
+        var e = Math.min(1, (t - 3.2) * 1.8);
+        ctx.fillStyle = 'rgba(230,224,204,' + (0.75 * e) + ')';
+        ctx.beginPath();
+        ctx.ellipse(-sw * 0.030, -sh * 0.085, sw * 0.0052, sh * 0.0062, 0, 0, 6.283);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(sw * 0.030, -sh * 0.085, sw * 0.0052, sh * 0.0062, 0, 0, 6.283);
+        ctx.fill();
+      }
+      // 5.2 秒：门缝黑掉，人已经不在门里
+      if (t > 5.2) {
+        ctx.fillStyle = 'rgba(3,4,4,.96)';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+        // 原来站在那里的东西已经在屏幕边缘
+        var edge = Math.min(1, (t - 5.2) / 0.9);
+        ctx.fillStyle = 'rgba(9,11,10,.75)';
+        ctx.fillRect(-sw / 2 + sw * (1 - edge) * 0.6, -sh / 2, sw * 0.42, sh);
+        var blink2 = (Math.sin(t * 9) > -0.5) ? 1 : 0.25;
+        ctx.fillStyle = 'rgba(232,226,206,' + (0.7 * blink2 * edge) + ')';
+        ctx.beginPath();
+        ctx.ellipse(-sw * 0.32, -sh * 0.10, sw * 0.0058, sh * 0.0068, 0, 0, 6.283);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-sw * 0.245, -sh * 0.102, sw * 0.0058, sh * 0.0068, 0, 0, 6.283);
+        ctx.fill();
+      }
+      // 白闪一下收尾
+      if (t > 6.5 && t < 6.72) {
+        ctx.fillStyle = 'rgba(226,232,214,.85)';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+      }
+      cgGrain(sw, sh, t > 5.0);
+    }
+
+    if (i === 2) {
+      // 魔法阵：红圈在转，阵里躺着一个人
+      var rot = t * 0.5;
+      var R = sw * 0.31;
+      var cy2 = sh * 0.05;
+      ctx.save();
+      ctx.translate(0, cy2);
+      ctx.strokeStyle = 'rgba(170,58,44,.85)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, R, 0, 6.283);
+      ctx.stroke();
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.arc(0, 0, R * 0.76, 0, 6.283);
+      ctx.stroke();
+      for (var k2 = 0; k2 < 12; k2++) {
+        var a2 = rot + k2 * 6.283 / 12;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a2) * R * 0.76, Math.sin(a2) * R * 0.76);
+        ctx.lineTo(Math.cos(a2) * R * 1.00, Math.sin(a2) * R * 1.00);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 躺着的人：被一只手往右拖
+      var drag = Math.min(1, Math.max(0, (t - 2.4) / 2.4));
+      ctx.fillStyle = 'rgba(8,10,9,.95)';
+      ctx.beginPath();
+      ctx.ellipse(-sw * 0.03 + drag * sw * 0.20, cy2 - sh * 0.075, sw * 0.048, sh * 0.038, 0, 0, 6.283);
+      ctx.fill();
+      ctx.fillRect(-sw * 0.09 + drag * sw * 0.20, cy2 - sh * 0.05, sw * 0.16, sh * 0.19);
+
+      if (t > 1.2) {
+        var arm = Math.min(1, (t - 1.2) / 1.0);
+        ctx.strokeStyle = 'rgba(112,102,92,' + (0.55 * arm) + ')';
+        ctx.lineWidth = sw * 0.014;
+        ctx.beginPath();
+        ctx.moveTo(sw * 0.42, cy2 + sh * 0.20);
+        ctx.lineTo(sw * (0.12 - 0.10 * arm) + drag * sw * 0.20, cy2 + sh * 0.12);
+        ctx.stroke();
+      }
+
+      // 4.4 秒：阵心塌成一块黑，里面有两点眼睛
+      if (t > 4.4) {
+        var k3 = Math.min(1, (t - 4.4) / 0.8);
+        ctx.fillStyle = 'rgba(2,3,3,' + (0.85 * k3) + ')';
+        ctx.beginPath();
+        ctx.ellipse(0, cy2, R * 0.72 * k3, R * 0.72 * k3, 0, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(232,224,204,' + (0.70 * k3) + ')';
+        ctx.beginPath();
+        ctx.ellipse(-R * 0.16, cy2 - R * 0.06, sw * 0.0055, sh * 0.0065, 0, 0, 6.283);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(R * 0.16, cy2 - R * 0.06, sw * 0.0055, sh * 0.0065, 0, 0, 6.283);
+        ctx.fill();
+      }
+      if (t > 6.2 && t < 6.4) {
+        ctx.fillStyle = 'rgba(150,36,26,.80)';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+      }
+      cgGrain(sw, sh, t > 4.2);
+    }
+
+    // 老胶片上下黑边 + 扫描线
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.fillRect(-sw / 2, -sh / 2, sw, sh * 0.045);
+    ctx.fillRect(-sw / 2, sh * 0.455, sw, sh * 0.045);
+    for (var s2 = 0; s2 < 16; s2++) {
+      ctx.fillStyle = 'rgba(255,255,255,.018)';
+      ctx.fillRect(-sw / 2, -sh / 2 + s2 * sh * 0.058, sw, 1);
+    }
+  }
+
+  function drawMoments(sw, sh, g, top) {
+    var posts = [
+      { n: '老 K', t: '1 分钟前', txt: '三层的灯，自己亮的。', cg: 0, d: '00:07' },
+      { n: '内务处 · 周', t: '8 分钟前', txt: '别点开。', cg: 1, d: '00:07' },
+      { n: '办公厅值班群', t: '23 分钟前', txt: '刚才有人敲门，门缝里没有脚。', cg: 2, d: '00:07' }
+    ];
+    var rowH = sh * 0.255;
+    posts.forEach(function (p, i) {
+      var y = top + i * rowH;
+      // 头像
+      rr(-sw * 0.40, y, sh * 0.052, sh * 0.052, sh * 0.012);
+      ctx.fillStyle = 'rgba(84,126,92,.22)';
+      ctx.fill();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + (sh * 0.016) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(188,206,178,.8)';
+      ctx.fillText(p.n.charAt(0), -sw * 0.40 + sh * 0.026, y + sh * 0.026);
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (sh * 0.0185) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(178,206,232,.92)';
+      ctx.fillText(p.n, -sw * 0.315, y + sh * 0.020);
+      ctx.font = (sh * 0.0135) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,158,140,.6)';
+      ctx.fillText(p.t, -sw * 0.315, y + sh * 0.040);
+
+      ctx.font = (sh * 0.0175) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(214,210,196,.90)';
+      ctx.fillText(p.txt, -sw * 0.315, y + sh * 0.066);
+
+      // 视频卡
+      var vx = -sw * 0.315, vy = y + sh * 0.078, vw = sw * 0.44, vh = sh * 0.098;
+      rr(vx, vy, vw, vh, sh * 0.008);
+      ctx.fillStyle = 'rgba(10,14,12,.95)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(150,180,130,.16)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // 缩略的暗画面
+      ctx.fillStyle = 'rgba(60,72,58,.18)';
+      ctx.fillRect(vx + 2, vy + 2, vw - 4, vh * 0.62);
+      // 播放三角
+      ctx.fillStyle = 'rgba(226,232,214,.85)';
+      ctx.beginPath();
+      ctx.moveTo(vx + vw * 0.5 - sh * 0.008, vy + vh * 0.30 - sh * 0.012);
+      ctx.lineTo(vx + vw * 0.5 - sh * 0.008, vy + vh * 0.30 + sh * 0.012);
+      ctx.lineTo(vx + vw * 0.5 + sh * 0.012, vy + vh * 0.30);
+      ctx.closePath();
+      ctx.fill();
+      ctx.textAlign = 'left';
+      ctx.font = (sh * 0.0115) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(190,200,180,.72)';
+      ctx.fillText(p.d, vx + sw * 0.012, vy + vh * 0.86);
+
+      var pp = pageOf(vx + vw * 0.5, vy + vh * 0.45, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'wx:cg:' + p.cg, x: pp.x, y: pp.y, r: Math.max(26, vw * 0.45) });
+
+      ctx.fillStyle = 'rgba(125,155,98,.10)';
+      ctx.fillRect(-sw * 0.42, y + rowH - 4, sw * 0.84, 1);
+    });
+  }
+
+  function drawWechat(el) {
+    var g = homeGeom();
+    stageBg(1, el);
+    var now = performance.now();
+
+    // 点了发送 → 3 秒后验证码到
+    if (wxSent && !wxCoded && now - wxSentAt >= 3000) {
+      wxCoded = true;
+      wxBannerOn = true;
+      wxBannerAt = now;
+      wxField = 'code';
+      cueMsg();
+      APP_DATA.sms.head = '未读 2';
+      APP_DATA.sms.rows.unshift(['微信', '验证码 7878，5 分钟内有效。', PH_CLOCK]);
+    }
+
+    // 闹钟与关机交给全局（alarmTick / alarmOverlay）
+
+    phoneFrame(g.cx, g.cy, g.w, g.tilt, 1, 1, function (sw, sh) {
+      var fs = Math.max(10, sw * 0.042);
+
+      // 关机之后：整块屏黑掉，什么都不给点
+      if (shutFade > 0) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+        var off = (performance.now() - shutFade) / 900;
+        if (off < 1) {
+          ctx.globalAlpha = 1 - off;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = (sh * 0.020) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(180,190,170,.55)';
+          ctx.fillText('关机中…', 0, 0);
+          ctx.globalAlpha = 1;
+        }
+        return;
+      }
+
+      // CG 播放中
+      if (wxState === 'cg') {
+        var t = (now - cgT0) / 1000;
+        cgSound(cgIdx, t);
+        ctx.save();
+        cgScene(cgIdx, t, sw, sh);
+        ctx.restore();
+
+        // 片名
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = (sh * 0.0145) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(206,190,170,.62)';
+        ctx.fillText(CG_TITLES[cgIdx], -sw * 0.42, sh * 0.415);
+
+        if (t > CG_LEN) {
+          wxState = 'moments';
+          if (alarmAt < 0) alarmAt = performance.now() + 1800;
+        }
+        return;
+      }
+
+      ctx.fillStyle = '#070b09';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      // 状态栏
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.72) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(158,170,150,.66)';
+      ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 0.95);
+      ctx.textAlign = 'right';
+      ctx.fillText('84%', sw * 0.42, -sh / 2 + fs * 0.95);
+
+      // 标题栏
+      var hy = -sh / 2 + fs * 1.75;
+      var hh = sh * 0.076;
+      ctx.fillStyle = 'rgba(255,255,255,.028)';
+      ctx.fillRect(-sw / 2, hy, sw, hh);
+      ctx.fillStyle = 'rgba(125,155,98,.16)';
+      ctx.fillRect(-sw / 2, hy + hh, sw, 1);
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(190,200,176,.9)';
+      ctx.fillText('‹', -sw * 0.44, hy + hh * 0.52);
+      var bp = pageOf(-sw * 0.40, hy + hh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'wx:back', x: bp.x, y: bp.y, r: Math.max(22, fs * 2.2) });
+
+      ctx.textAlign = 'center';
+      ctx.font = '600 ' + (fs * 0.92) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(226,222,206,.95)';
+      var title = '微信';
+      if (wxState === 'info') title = '信息';
+      else if (wxState === 'discover') title = '发现';
+      else if (wxState === 'moments') title = '朋友圈';
+      else if (wxState === 'svc') title = '服务';
+      else if (wxState === 'money') title = '零钱包';
+      ctx.fillText(title, 0, hy + hh * 0.52);
+      ctx.fillStyle = '#7fae86';
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(-sw * 0.045, hy + hh + 2, sw * 0.09, Math.max(1, sw * 0.003));
+      ctx.globalAlpha = 1;
+
+      var top = hy + hh + sh * 0.022;
+
+      // ---------- 登录 / 手机验证 ----------
+      if (wxState === 'login' || wxState === 'verify') {
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '900 ' + (sh * 0.032) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(226,222,206,.95)';
+        ctx.fillText(wxState === 'login' ? '登 录' : '手机验证', -sw * 0.40, top + sh * 0.024);
+        ctx.font = (sh * 0.0128) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,160,140,.52)';
+        ctx.fillText('lyn.net / wechat', -sw * 0.40, top + sh * 0.054);
+
+        var y = top + sh * 0.090;
+
+        if (wxState === 'login') {
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = (sh * 0.0135) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(146,160,140,.62)';
+          ctx.fillText('账号', -sw * 0.395, y - sh * 0.011);
+          var bh0 = sh * 0.072;
+          rr(-sw * 0.40, y, sw * 0.80, bh0, bh0 * 0.16);
+          ctx.fillStyle = 'rgba(255,255,255,.03)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(200,210,190,.10)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.textBaseline = 'middle';
+          ctx.font = (sh * 0.0205) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(214,210,194,.92)';
+          ctx.fillText('Gun7z', -sw * 0.365, y + bh0 * 0.54);
+          y += bh0 + sh * 0.028;
+
+          y = wxFieldBox(sw, sh, g, y, '密码', wxPW, wxField === 'pw', true, 'pw');
+          y += sh * 0.022;
+          y = wxBtn(sw, sh, g, y, '登  录', 'wx:login', wxPW.length < 4);
+
+          if (wxErr) {
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.font = (sh * 0.0155) + 'px ' + SERIF;
+            ctx.fillStyle = 'rgba(196,104,78,.92)';
+            ctx.fillText(wxErr, -sw * 0.40, y + sh * 0.024);
+          }
+          wxPad(sw, sh, g, sh * 0.058);
+        } else {
+          y = wxFieldBox(sw, sh, g, y, '手机号', wxPhone, wxField === 'phone', false, 'phone');
+          y += sh * 0.018;
+          y = wxBtn(sw, sh, g, y, wxSent ? (wxCoded ? '验证码已发送' : '已发送 · 请稍候') : '发送验证码',
+            'wx:send', wxPhone.length < 11 || wxSent);
+          y += sh * 0.034;
+          y = wxFieldBox(sw, sh, g, y, '验证码', wxCode, wxField === 'code', false, 'code');
+          y += sh * 0.022;
+          y = wxBtn(sw, sh, g, y, '下  一  步', 'wx:next', !wxCoded);
+
+          if (wxErr) {
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.font = (sh * 0.0155) + 'px ' + SERIF;
+            ctx.fillStyle = 'rgba(196,104,78,.92)';
+            ctx.fillText(wxErr, -sw * 0.40, y + sh * 0.022);
+          }
+          wxPad(sw, sh, g, sh * 0.128);
+        }
+        wxBanner(sw, sh);
+        return;
+      }
+
+      // ---------- 微信会话 ----------
+      if (wxState === 'main') {
+        var rows = [
+          { n: '爱播粉丝群（12）', m: '记得开播', t: '03:58', badge: '99+', mute: false },
+          { n: '广州牛马群（450）', m: '', t: '03:51', badge: '', mute: true },
+          { n: 'XXX公司群（15）', m: '明天休息，请假一天！', t: '昨天', badge: '', mute: false, read: true }
+        ];
+        var rh = sh * 0.094;
+        rows.forEach(function (r, i) {
+          var y = top + i * rh;
+          rr(-sw * 0.40, y + rh * 0.16, rh * 0.62, rh * 0.62, rh * 0.18);
+          ctx.fillStyle = 'rgba(88,132,96,.22)';
+          ctx.fill();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = '600 ' + (sh * 0.017) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(190,210,180,.8)';
+          ctx.fillText(r.n.charAt(0), -sw * 0.40 + rh * 0.31, y + rh * 0.48);
+
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = '600 ' + (sh * 0.0185) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(224,220,204,.94)';
+          ctx.fillText(r.n, -sw * 0.27, y + rh * 0.36);
+
+          if (r.m) {
+            ctx.font = (sh * 0.0150) + 'px ' + SERIF;
+            ctx.fillStyle = 'rgba(146,158,140,.72)';
+            var mm = r.m;
+            while (ctx.measureText(mm).width > sw * 0.46 && mm.length > 4) mm = mm.slice(0, -1);
+            ctx.fillText(mm, -sw * 0.27, y + rh * 0.66);
+          }
+
+          ctx.textAlign = 'right';
+          ctx.font = (sh * 0.0130) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(140,152,132,.62)';
+          ctx.fillText(r.t, sw * 0.40, y + rh * 0.28);
+
+          // 未读 / 免打扰 / 已读
+          if (r.badge) {
+            var bw2 = sw * 0.085, bh2 = sh * 0.026;
+            rr(sw * 0.40 - bw2, y + rh * 0.44, bw2, bh2, bh2 * 0.4);
+            ctx.fillStyle = 'rgba(178,62,46,.85)';
+            ctx.fill();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '600 ' + (sh * 0.0135) + 'px ' + MONO;
+            ctx.fillStyle = 'rgba(236,228,214,.95)';
+            ctx.fillText(r.badge, sw * 0.40 - bw2 / 2, y + rh * 0.44 + bh2 * 0.52);
+          } else if (r.mute) {
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.font = (sh * 0.0130) + 'px ' + MONO;
+            ctx.fillStyle = 'rgba(146,158,140,.62)';
+            ctx.fillText('免打扰', sw * 0.40, y + rh * 0.58);
+          } else if (r.read) {
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.font = (sh * 0.0130) + 'px ' + MONO;
+            ctx.fillStyle = 'rgba(146,158,140,.55)';
+            ctx.fillText('已读', sw * 0.40, y + rh * 0.58);
+          }
+
+          ctx.fillStyle = 'rgba(125,155,98,.10)';
+          ctx.fillRect(-sw * 0.42, y + rh - 1, sw * 0.84, 1);
+        });
+        wxTabs(sw, sh, g);
+        return;
+      }
+
+      // ---------- 信息（空的） ----------
+      if (wxState === 'info') {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = (sh * 0.0180) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,158,140,.40)';
+        ctx.fillText('暂无信息', 0, top + sh * 0.16);
+        ctx.font = (sh * 0.0125) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,158,140,.26)';
+        ctx.fillText('这里不会有人给你发消息', 0, top + sh * 0.20);
+        wxTabs(sw, sh, g);
+        return;
+      }
+
+      // ---------- 发现 ----------
+      if (wxState === 'discover') {
+        var dY = top + sh * 0.010;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = (sh * 0.0185) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(214,210,196,.92)';
+        ctx.fillText('朋友圈', -sw * 0.40, dY + sh * 0.040);
+        // 小红点
+        ctx.fillStyle = 'rgba(178,62,46,.85)';
+        ctx.beginPath();
+        ctx.arc(-sw * 0.335, dY + sh * 0.033, sh * 0.0045, 0, 6.283);
+        ctx.fill();
+        ctx.textAlign = 'right';
+        ctx.font = (sh * 0.018) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(150,162,146,.5)';
+        ctx.fillText('›', sw * 0.40, dY + sh * 0.040);
+        ctx.fillStyle = 'rgba(125,155,98,.10)';
+        ctx.fillRect(-sw * 0.42, dY + sh * 0.052, sw * 0.84, 1);
+
+        var pp = pageOf(0, dY + sh * 0.026, g.cx, g.cy, g.tilt);
+        hotspots.push({ id: 'wx:moments', x: pp.x, y: pp.y, r: Math.max(24, sh * 0.040) });
+
+        wxTabs(sw, sh, g);
+        return;
+      }
+
+      // ---------- 朋友圈 ----------
+      if (wxState === 'moments') {
+        drawMoments(sw, sh, g, top + sh * 0.006);
+        return;   // 朋友圈没有底部 tab
+      }
+
+      // ---------- 我 / 服务 / 零钱 ----------
+      if (wxState === 'me') {
+        rr(-sw * 0.40, top, sw * 0.16, sw * 0.16, sw * 0.034);
+        ctx.fillStyle = 'rgba(88,132,96,.22)';
+        ctx.fill();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '900 ' + (sh * 0.032) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(196,214,186,.85)';
+        ctx.fillText('G', -sw * 0.40 + sw * 0.08, top + sw * 0.086);
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '600 ' + (sh * 0.0240) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(226,222,206,.95)';
+        ctx.fillText('Gun7z', -sw * 0.19, top + sw * 0.062);
+        ctx.font = (sh * 0.0140) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,158,140,.68)';
+        ctx.fillText('洛亚提 · 元首', -sw * 0.19, top + sw * 0.098);
+
+        var mrows = [['服务', 'wx:srv'], ['收藏', ''], ['朋友圈', ''], ['设置', '']];
+        var mrh = sh * 0.075, my0 = top + sw * 0.21;
+        mrows.forEach(function (r, i) {
+          var y = my0 + i * mrh;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = (sh * 0.0200) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(224,220,204,.92)';
+          ctx.fillText(r[0], -sw * 0.40, y + mrh * 0.44);
+          ctx.textAlign = 'right';
+          ctx.font = (sh * 0.019) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(150,162,146,.50)';
+          ctx.fillText('›', sw * 0.40, y + mrh * 0.44);
+          ctx.fillStyle = 'rgba(125,155,98,.10)';
+          ctx.fillRect(-sw * 0.42, y + mrh - 1, sw * 0.84, 1);
+          if (r[1]) {
+            var p = pageOf(0, y + mrh * 0.46, g.cx, g.cy, g.tilt);
+            hotspots.push({ id: r[1], x: p.x, y: p.y, r: Math.max(22, mrh * 0.62) });
+          }
+        });
+        wxTabs(sw, sh, g);
+        return;
+      }
+
+      if (wxState === 'svc') {
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = (sh * 0.0150) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,160,140,.64)';
+        ctx.fillText('服务', -sw * 0.40, top + sh * 0.010);
+
+        var srows = [['收付款', ''], ['钱包', ''], ['零钱', 'wx:money']];
+        var srh = sh * 0.082, sy0 = top + sh * 0.028;
+        srows.forEach(function (r, i) {
+          var y = sy0 + i * srh;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = (sh * 0.0205) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(224,220,204,.92)';
+          ctx.fillText(r[0], -sw * 0.40, y + srh * 0.46);
+          ctx.textAlign = 'right';
+          ctx.font = (sh * 0.0140) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(150,162,146,.55)';
+          ctx.fillText(r[0] === '零钱' ? '0.00 ›' : '›', sw * 0.40, y + srh * 0.46);
+          ctx.fillStyle = 'rgba(125,155,98,.10)';
+          ctx.fillRect(-sw * 0.42, y + srh - 1, sw * 0.84, 1);
+          if (r[1]) {
+            var p2 = pageOf(0, y + srh * 0.46, g.cx, g.cy, g.tilt);
+            hotspots.push({ id: r[1], x: p2.x, y: p2.y, r: Math.max(22, srh * 0.60) });
+          }
+        });
+        wxTabs(sw, sh, g);
+        return;
+      }
+
+      // 零钱
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = (sh * 0.0150) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,160,140,.64)';
+      ctx.fillText('零钱', -sw * 0.40, top + sh * 0.010);
+
+      ctx.font = (sh * 0.0135) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(150,162,146,.58)';
+      ctx.fillText('余额', -sw * 0.40, top + sh * 0.070);
+
+      ctx.font = '900 ' + (sh * 0.046) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(232,227,210,.96)';
+      ctx.fillText('0.00', -sw * 0.40, top + sh * 0.132);
+
+      ctx.fillStyle = 'rgba(125,155,98,.18)';
+      ctx.fillRect(-sw * 0.40, top + sh * 0.155, sw * 0.80, 1);
+
+      ctx.font = (sh * 0.0145) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,158,140,.62)';
+      ctx.fillText('零钱明细', -sw * 0.40, top + sh * 0.192);
+      ctx.fillStyle = 'rgba(150,162,146,.38)';
+      ctx.fillText('暂无明细', -sw * 0.40, top + sh * 0.226);
+
+      wxTabs(sw, sh, g);
+      wxBanner(sw, sh);
+    });
+
+  }
+
+  /* ---------- 阶段四 B：浏览器（内网百科，自己搜） ---------- */
+  // 词条正文用「字符串 + {h:词}」拼，{h} 画成黑体、可点，点了就再搜它
+  var BW_ENTRIES = {
+    '魔法阵': {
+      sub: '建筑 · 能量节点',
+      alias: 'mofazhen fzhen 法阵 阵 魔法',
+      body: [
+        '云历 100 年，洛亚提诞生了一群', { h: '魔法师' }, '。为了追求魔法，', { h: '魔法师' }, '们建造了魔法阵与', { h: '魔法塔' }, '，两座建筑同时开启，会产生巨大的', { h: '能量' }, '。'
+      ]
+    },
+    '魔法师': {
+      sub: '职业 · 施法者',
+      alias: 'mofashi fashi 法师 魔杖 技能 施法',
+      body: [
+        '可以制造魔杖，也可以直接购买魔杖。学习魔法要花的钱非常多，消耗的物品也非常多，每一个技能都不一样。'
+      ]
+    },
+    '魔法塔': {
+      sub: '建筑 · 激活条件',
+      alias: 'mofata fta 塔 物品 激活 建设 五年',
+      body: [
+        '由', { h: 'Gun7z' }, '主持建设，耗时 5 年建成。', { h: '魔法塔' }, '需要 5 种物品才能激活，而魔法阵不需要。'
+      ]
+    },
+    'Gun7z': {
+      sub: '人物 · 元首',
+      alias: 'gun gun7z 元首 洛亚提 联邦 失踪 云历72年',
+      body: [
+        '云历 72 年 3 月 3 日生，洛亚提的元首。有一点传闻——他的建议，不要采纳！'
+      ]
+    }
+  };
+  var BW_ORDER = ['魔法阵', '魔法师', '魔法塔', 'Gun7z'];
+
+  // 热搜榜（第 10 条是钩子）
+  var BW_HOT = [
+    '忘记QQ密码的都是些什么人？',
+    '我的世界都还有人不知道吗？',
+    'XD老师来洛亚提演出',
+    'XD新出音乐乐谱被抢空',
+    '魔法塔顶层连续三夜不熄灯，值守称「不是我们点的」',
+    '边界外多出十六格，巡查队说那边没有声音',
+    '地下城招工：搬砖半天，管三顿饭',
+    '云历100周年庆典延期，公告只写了一行',
+    '公主生日改放火把，烟花「买不到」',
+    '洛亚提元首失踪！'
+  ];
+
+  var bwPage = 'home';        // home / results / article / none
+  var bwQuery = '';
+  var bwTyped = '';
+  var bwHits = [];
+  var bwInput = null;
+
+  function bwNorm(s) {
+    return (s || '').toLowerCase().replace(/[\s·、，。！？…—“”「」：；\-]/g, '');
+  }
+  function bwPlain(e) {
+    var s = e.title + e.sub;
+    e.body.forEach(function (it) { s += (typeof it === 'string') ? it : it.h; });
+    return s + (e.alias || '');
+  }
+  // 相关就能出：查询里有一个字对得上就给
+  function bwMatch(q) {
+    var n = bwNorm(q);
+    if (!n) return [];
+    var out = [];
+    BW_ORDER.forEach(function (w) {
+      var e = BW_ENTRIES[w];
+      e.title = w;
+      var hay = bwNorm(bwPlain(e));
+      var nm = bwNorm(w), al = bwNorm(e.alias || '');
+      var hit = 0;
+      for (var i = 0; i < n.length; i++) { if (hay.indexOf(n.charAt(i)) >= 0) hit++; }
+      // 标题或拼音直接对上，排前面
+      var bonus = (nm.indexOf(n) >= 0 || al.indexOf(n) >= 0) ? 1 : 0;
+      if (hit > 0) out.push({ w: w, score: hit / n.length + bonus });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out.slice(0, 4);
+  }
+
+  // 拼音（键盘上打字母就能挑出中文词条，不用输入法）
+  var BW_PY = {
+    '魔法阵': ['mofazhen', 'mofa', 'fzhen', 'fz', 'zhen', 'zz'],
+    '魔法师': ['mofashi', 'mofa', 'fashi', 'fs', 'shi'],
+    '魔法塔': ['mofata', 'mofa', 'fta', 'ft', 'ta'],
+    'Gun7z': ['gun7z', 'gun', 'g7', 'yuanshou', 'ys', 'luoyati', 'lyt']
+  };
+  function bwCand(q) {
+    var t = (q || '').toLowerCase().replace(/\s/g, '');
+    if (!/^[a-z0-9]+$/.test(t)) return [];
+    var out = [];
+    BW_ORDER.forEach(function (w) {
+      var pys = BW_PY[w] || [];
+      for (var i = 0; i < pys.length; i++) {
+        if (pys[i].indexOf(t) === 0) { out.push(w); break; }
+      }
+    });
+    return out.slice(0, 3);
+  }
+
+  function bwSearch(q) {
+    q = (q || '').trim();
+    bwTyped = '';
+    bwQuery = q;
+    if (q) phAdvance('04:30');   // 检索内网的时候，时间已经是四点半
+    bwHits = bwMatch(q);
+    bwPage = bwHits.length ? 'results' : 'none';
+    if (bwInput) {
+      try { bwInput.blur(); } catch (e) { }
+      bwInput.value = '';
+      bwInput.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
+        + 'border:0;padding:0;margin:0;background:transparent;color:transparent;z-index:-1;';
+    }
+    cueTap();
+  }
+
+  function bwOpen(word) {
+    bwPage = 'article';
+    bwQuery = word;
+    bwHits = [];
+    cueTap();
+  }
+
+  function bwAction(a) {
+    if (a === 'back') {   // 页内返回：先回热搜页，热搜再返回才退出浏览器
+      if (bwPage !== 'home') { bwPage = 'home'; bwQuery = ''; bwTyped = ''; cueTap(); return; }
+      setStage('home'); cueTap();
+      return;
+    }
+    if (a === 'home') { bwPage = 'home'; bwQuery = ''; bwTyped = ''; cueTap(); return; }
+    if (a === 'focus') { bwFocus(); return; }
+    if (a.indexOf('go:') === 0) { bwSearch(a.slice(3)); return; }
+    if (a.indexOf('open:') === 0) { bwOpen(a.slice(5)); return; }
+    if (a.indexOf('hot:') === 0) { bwSearch(BW_HOT[+a.slice(4)]); return; }
+  }
+
+  // 点搜索框：手机上叫出系统输入法；电脑上直接用键盘敲（不抢输入法）
+  var BW_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  function bwFocus() {
+    if (!bwInput) { cueTap(); return; }
+    bwTyped = bwTyped || '';
+    bwInput.value = bwTyped;
+    if (BW_TOUCH) {
+      try { bwInput.focus(); } catch (e) { }
+      bwInput.style.cssText = 'position:fixed;left:6%;top:44%;width:88%;height:7%;opacity:0.01;'
+        + 'border:0;padding:0;margin:0;color:transparent;background:transparent;font-size:16px;z-index:9;';
+      setTimeout(function () { try { if (document.activeElement !== bwInput) bwInput.focus(); } catch (e) { } }, 60);
+    }
+    cueTap();
+  }
+
+  // 小药丸（相关词条用）
+  function bwPill(x, y, w, h, label, id, g, fs, hot) {
+    rr(x, y, w, h, h * 0.5);
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    ctx.fill();
+    ctx.strokeStyle = hot ? 'rgba(168,192,150,.34)' : 'rgba(200,210,190,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var bs = fs * 0.76;
+    ctx.font = '600 ' + bs + 'px ' + SERIF;
+    while (ctx.measureText(label).width > w - h * 0.5 && bs > 7) { bs -= 0.3; ctx.font = '600 ' + bs + 'px ' + SERIF; }
+    ctx.fillStyle = hot ? 'rgba(206,222,192,.95)' : 'rgba(178,190,168,.85)';
+    ctx.fillText(label, x + w / 2, y + h * 0.54);
+    var p = pageOf(x + w / 2, y + h * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: id, x: p.x, y: p.y, r: Math.max(18, h * 0.75) });
+  }
+
+  // 正文：黑体词整词不拆，折行后仍是可点的
+  function bwDrawBody(body, sw, sh, size, top, g) {
+    var maxW = sw * 0.82;
+    var x0 = -sw * 0.40;
+    var k = g.w / sw;
+    var lh = size * 1.85;
+
+    var toks = [];
+    body.forEach(function (it) {
+      if (typeof it === 'string') {
+        for (var i = 0; i < it.length; i++) toks.push({ s: it.charAt(i), h: null });
+      } else {
+        toks.push({ s: it.h, h: it.h });
+      }
+    });
+
+    var lines = [], cur = [], cw = 0;
+    toks.forEach(function (t) {
+      ctx.font = (t.h ? '700 ' : '400 ') + size + 'px ' + SERIF;
+      var w = ctx.measureText(t.s).width;
+      if (cw + w > maxW && cur.length && !/^[，。！？…、；：」』）]/.test(t.s.charAt(0))) {
+        lines.push(cur); cur = [t]; cw = w;
+      } else { cur.push(t); cw += w; }
+    });
+    if (cur.length) lines.push(cur);
+
+    var y = top + size;
+    lines.forEach(function (ln) {
+      var x = x0;
+      ln.forEach(function (t) {
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = (t.h ? '700 ' : '400 ') + size + 'px ' + SERIF;
+        ctx.fillStyle = t.h ? 'rgba(198,222,166,1)' : 'rgba(220,216,200,.90)';
+        ctx.fillText(t.s, x, y);
+        var w = ctx.measureText(t.s).width;
+        if (t.h) {
+          ctx.fillStyle = 'rgba(158,196,126,.62)';
+          ctx.fillRect(x, y + size * 0.26, w, Math.max(1.2, size * 0.08));
+          var p = pageOf(x + w / 2, y - size * 0.36, g.cx, g.cy, g.tilt);
+          hotspots.push({ id: 'bw:open:' + t.h, x: p.x, y: p.y, r: Math.max(15, w * k * 0.72) });
+        }
+        x += w;
+      });
+      y += lh;
+    });
+    return y;
+  }
+
+  // 搜索框（只有一个放大镜，不给提示词）
+  function bwBar(sw, sh, g, y) {
+    var bh = sh * 0.068;
+    rr(-sw * 0.40, y, sw * 0.80, bh, bh * 0.14);
+    ctx.fillStyle = 'rgba(255,255,255,.055)';
+    ctx.fill();
+    ctx.strokeStyle = bwTyped ? 'rgba(168,192,150,.45)' : 'rgba(200,210,190,.14)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = (sh * 0.026) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(160,176,154,.62)';
+    ctx.fillText('⌕', -sw * 0.355, y + bh * 0.54);
+
+    var val = bwTyped || (bwPage !== 'home' ? bwQuery : '');
+    if (val) {
+      ctx.font = '400 ' + (sh * 0.019) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(228,224,208,.95)';
+      var tx = -sw * 0.30;
+      var shown = val;
+      while (ctx.measureText(shown).width > sw * 0.60 && shown.length > 1) shown = shown.slice(0, -1);
+      ctx.fillText(shown, tx, y + bh * 0.54);
+      if (bwTyped) {   // 有个会闪的光标，说明在打字
+        var cw2 = ctx.measureText(shown).width;
+        if (Math.floor(performance.now() / 500) % 2 === 0) {
+          ctx.fillStyle = 'rgba(190,210,170,.85)';
+          ctx.fillRect(tx + cw2 + 2, y + bh * 0.30, Math.max(1, sw * 0.0022), bh * 0.42);
+        }
+      }
+    }
+
+    var hp = pageOf(-sw * 0.02, y + bh * 0.5, g.cx, g.cy, g.tilt);
+    hotspots.push({ id: 'bw:focus', x: hp.x, y: hp.y, r: Math.max(30, bh * 1.05) });
+    return y + bh;
+  }
+
+  function drawBrowser(el) {
+    var g = homeGeom();
+    stageBg(1, el);
+
+    phoneFrame(g.cx, g.cy, g.w, g.tilt, 1, 1, function (sw, sh) {
+      var fs = Math.max(10, sw * 0.042);
+      ctx.fillStyle = '#070b09';
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+
+      // 状态栏
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = (fs * 0.72) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(158,170,150,.66)';
+      ctx.fillText(PH_CLOCK, -sw * 0.42, -sh / 2 + fs * 0.95);
+      ctx.textAlign = 'right';
+      ctx.fillText('84%', sw * 0.42, -sh / 2 + fs * 0.95);
+
+      // 标题栏
+      var hy = -sh / 2 + fs * 1.75;
+      var hh = sh * 0.076;
+      ctx.fillStyle = 'rgba(255,255,255,.028)';
+      ctx.fillRect(-sw / 2, hy, sw, hh);
+      ctx.fillStyle = 'rgba(125,155,98,.16)';
+      ctx.fillRect(-sw / 2, hy + hh, sw, 1);
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 ' + (fs * 1.2) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(190,200,176,.9)';
+      ctx.fillText('‹', -sw * 0.44, hy + hh * 0.52);
+      var back = pageOf(-sw * 0.40, hy + hh * 0.5, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'bw:back', x: back.x, y: back.y, r: Math.max(22, fs * 2.2) });
+
+      ctx.textAlign = 'center';
+      ctx.font = '600 ' + (fs * 0.92) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(226,222,206,.95)';
+      ctx.fillText('浏览器', 0, hy + hh * 0.52);
+      ctx.fillStyle = '#adad86';
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(-sw * 0.045, hy + hh + 2, sw * 0.09, Math.max(1, sw * 0.003));
+      ctx.globalAlpha = 1;
+
+      // 地址栏
+      var listTop = hy + hh + sh * 0.028;
+      var barH = sh * 0.048;
+      rr(-sw * 0.40, listTop, sw * 0.80, barH, barH * 0.3);
+      ctx.fillStyle = 'rgba(255,255,255,.045)';
+      ctx.fill();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = (fs * 0.66) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(150,166,146,.9)';
+      var addr = (bwPage !== 'home' && bwQuery)
+        ? 'lyn.intra/wiki?q=' + bwQuery
+        : 'lyn.intra/wiki';
+      var aw = sw * 0.74;
+      while (ctx.measureText(addr).width > aw && addr.length > 8) addr = addr.slice(0, -2);
+      ctx.fillText(addr, -sw * 0.36, listTop + barH * 0.54);
+
+      var top = listTop + barH + sh * 0.026;
+
+      // ---------- 搜索页（首页 / 无结果）：搜索框 + 热搜榜 ----------
+      if (bwPage === 'home' || bwPage === 'none') {
+        var after = bwBar(sw, sh, g, top);
+
+        if (bwPage === 'none') {
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = '600 ' + (sh * 0.024) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(206,200,184,.92)';
+          var nq = '没有找到「' + bwQuery + '」';
+          var nl = wrapLines(nq, sw * 0.78, sh * 0.024);
+          nl.forEach(function (ln, i) { ctx.fillText(ln, -sw * 0.40, after + sh * 0.040 + i * sh * 0.032); });
+          after += sh * 0.040 + (nl.length - 1) * sh * 0.032 + sh * 0.014;
+        }
+
+        // 打字母时浮出来的拼音候选（点了就是搜那个中文词条）
+        var cds = bwCand(bwTyped);
+        if (cds.length) {
+          var cw0 = sw * 0.235, ch0 = sh * 0.046;
+          cds.forEach(function (w, i) {
+            bwPill(-sw * 0.40 + i * (cw0 + sw * 0.025), after + sh * 0.016, cw0, ch0, w, 'bw:go:' + w, g, fs, true);
+          });
+          after += sh * 0.016 + ch0;
+        }
+
+        // 热搜
+        var hy2 = after + sh * 0.030;
+        ctx.textAlign = 'left';
+        ctx.font = (sh * 0.0165) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,160,140,.62)';
+        ctx.fillText('热 搜', -sw * 0.40, hy2);
+
+        var rh = sh * 0.0435;
+        BW_HOT.forEach(function (t, i) {
+          var y = hy2 + sh * 0.012 + i * rh;
+          if (i < 3) {
+            ctx.font = '600 ' + (sh * 0.0175) + 'px ' + MONO;
+            ctx.fillStyle = 'rgba(196,104,78,.92)';
+          } else {
+            ctx.font = '500 ' + (sh * 0.0175) + 'px ' + MONO;
+            ctx.fillStyle = 'rgba(150,160,144,.72)';
+          }
+          ctx.textAlign = 'right';
+          ctx.fillText('' + (i + 1), -sw * 0.375, y + rh * 0.52);
+
+          ctx.textAlign = 'left';
+          ctx.font = (sh * 0.0172) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(214,210,196,.88)';
+          var txt = t;
+          while (ctx.measureText(txt).width > sw * 0.66 && txt.length > 6) txt = txt.slice(0, -1);
+          if (txt !== t) txt = txt.slice(0, -1) + '…';
+          ctx.fillText(txt, -sw * 0.335, y + rh * 0.52);
+
+          var p = pageOf(-sw * 0.04, y + rh * 0.5, g.cx, g.cy, g.tilt);
+          hotspots.push({ id: 'bw:hot:' + i, x: p.x, y: p.y, r: Math.max(20, rh * 0.72) });
+        });
+        return;
+      }
+
+      // ---------- 搜索结果 ----------
+      if (bwPage === 'results') {
+        var after2 = bwBar(sw, sh, g, top);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = (sh * 0.0165) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(146,160,140,.66)';
+        ctx.fillText('找到 ' + bwHits.length + ' 条相关 · ' + bwQuery, -sw * 0.40, after2 + sh * 0.030);
+
+        var rowH = sh * 0.126;
+        var ry0 = after2 + sh * 0.046;
+        bwHits.forEach(function (h, i) {
+          var e = BW_ENTRIES[h.w];
+          e.title = h.w;
+          var y = ry0 + i * rowH;
+
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = '600 ' + (sh * 0.0225) + 'px ' + SERIF;
+          ctx.fillStyle = 'rgba(178,208,232,.95)';
+          ctx.fillText(h.w, -sw * 0.40, y + sh * 0.026);
+
+          ctx.font = (sh * 0.014) + 'px ' + MONO;
+          ctx.fillStyle = 'rgba(126,150,120,.62)';
+          ctx.fillText('lyn.intra/wiki/' + h.w, -sw * 0.40, y + sh * 0.047);
+
+          // 摘要只从正文里取，别把副题顶上去
+          var plainB = '';
+          e.body.forEach(function (it) { plainB += (typeof it === 'string') ? it : it.h; });
+          var snip = plainB.length > 42 ? plainB.slice(0, 42) + '…' : plainB;
+          ctx.font = '400 ' + (sh * 0.0185) + 'px ' + SERIF;
+          var sl = wrapLines(snip, sw * 0.78, sh * 0.0185).slice(0, 2);
+          ctx.fillStyle = 'rgba(198,196,180,.82)';
+          sl.forEach(function (ln, li) { ctx.fillText(ln, -sw * 0.40, y + sh * 0.072 + li * sh * 0.0255); });
+
+          ctx.fillStyle = 'rgba(125,155,98,.10)';
+          ctx.fillRect(-sw * 0.42, y + rowH - 1, sw * 0.84, 1);
+
+          var p = pageOf(-sw * 0.05, y + rowH * 0.44, g.cx, g.cy, g.tilt);
+          hotspots.push({ id: 'bw:open:' + h.w, x: p.x, y: p.y, r: Math.max(26, rowH * 0.55) });
+        });
+        return;
+      }
+
+      // ---------- 词条页 ----------
+      var e2 = BW_ENTRIES[bwQuery];
+      var tyy = top;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = (sh * 0.016) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,160,140,.75)';
+      ctx.fillText('‹ 返回搜索', -sw * 0.40, tyy + sh * 0.016);
+      var cb = pageOf(-sw * 0.34, tyy + sh * 0.016, g.cx, g.cy, g.tilt);
+      hotspots.push({ id: 'bw:home', x: cb.x, y: cb.y, r: Math.max(20, sh * 0.06) });
+
+      var ty = tyy + sh * 0.036;
+      var titleS = sh * 0.046;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = '900 ' + titleS + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(232,227,210,.96)';
+      ctx.fillText(bwQuery, -sw * 0.40, ty + titleS);
+
+      ctx.font = (sh * 0.0165) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(146,160,140,.70)';
+      ctx.fillText(e2.sub || '', -sw * 0.40, ty + sh * 0.088);
+
+      ctx.fillStyle = 'rgba(125,155,98,.22)';
+      ctx.fillRect(-sw * 0.40, ty + sh * 0.100, sw * 0.80, 1);
+
+      var endY = bwDrawBody(e2.body, sw, sh, sh * 0.019, ty + sh * 0.114, g);
+
+      var ry = Math.min(endY + sh * 0.030, sh * 0.30);
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'left';
+      ctx.font = (sh * 0.0165) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(140,154,134,.62)';
+      ctx.fillText('相 关 词 条', -sw * 0.40, ry);
+
+      var others = BW_ORDER.filter(function (w) { return w !== bwQuery; }).slice(0, 3);
+      var ow = sw * 0.245, oh = sh * 0.052;
+      others.forEach(function (w, i) {
+        bwPill(-sw * 0.40 + i * (ow + sw * 0.028), ry + sh * 0.020, ow, oh, w, 'bw:open:' + w, g, fs, false);
+      });
+    });
+  }
+
+  /* ---------- 阶段二 B：挂断 → 暗杀 ---------- */
+  var K = {
+    off: 0,        // 熄屏
+    room: 1400,    // 房间浮现
+    rise: 5000,    // 它抬头
+    stand: 7400,   // 站起来、逼近
+    rush: 9300,    // 扑过来
+    strike: 9950,  // 一击
+    fall: 11400,   // 视角倒地
+    dark: 15000,   // 全黑
+    end: 16600     // 切死亡屏
+  };
+
+  // 像素怪：用 64×64 纹理拼出来
+  var BOSS_SRC = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAClUlEQVR4AeyazXXDIAzHjUfoBp2ot5w6Q187ST9m6Kk5dYYO0g26gsvfMX6yggEbDKIlzwoYCSH9EMmrm77zvD6HxyFGPO5D1IM2colW77+8APa7rmNmA1DHPh0XZauA49jW4bmGClAapUu0ev9VA4D92QXM7H3f8QE+nCYB/te+451+Lco1Pxi3mI9Dg9QKQMmPEW54c80BBJt0UQDu1MuG+IJNVajlML2IvW2ubcxMUV4AriR1eRtHKVoECpl9Tflh5+Yx2lHTi47pPnxAdHe++D0U45gXQOIksTAXBALh492Un1V3ZXw9gHkQo7H2vQDM7D/SUghjSv8NAI7TAsImAPg8gLyfnkd6Fb4pHTMg6OZy9TohReUybH+fPg/U+awWc+j8m+62cwn3rH0unjdwPb/n9uae2znu91eAw2m1qr7ayBMF3gCYM2RaH1hjt9b+dN8dl7fTwzwW639tPo9nzY6PH14B0r8xDgcA4vcfT2hEShYAIjOfgmoAJhCHNpI/Bw6vAMnnH7t+OAAsIlmyAZB6DLIAkHwMsgCQuvs4mlkAYKFSVYC1XXL1PID+bZ+q73p+kGoN7seVNNVlqwC6qKR+AyBpN0rE0iqgBHXHmosntg67ZCppFYAntlkhSAOA5AEh2Q77HEkDgOQBwRd3Mr00AEgeEJIl6HMkDQCSBwRf3Mn00gAgeUBIlqDPkTQASB4QfHEn00sDkCyxUEcNQCipjHY4BruX2zoxugK+hteBCv8fHb+ntujzgDFmhM7ldqnuowGkCqSUnwagFHkp60ZXAP8tgC8xbk/POfpUT31BR4XqYvrRAGIWlzC3AZCwCyVjaBVQkr6EtVsFSNiFkjG0CihJX8LarQIk7EJMDLFzfwEAAP//bSE5GgAAAAZJREFUAwDohdky2nr0BAAAAABJRU5ErkJggg==';
+
+  var bossImg = new Image();
+  var bossTex = null;
+  bossImg.onload = function () {
+    var c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    var g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(bossImg, 0, 0, 128, 128);
+    // 压暗成墨绿，只留纹理的明暗块
+    g.globalCompositeOperation = 'multiply';
+    g.fillStyle = 'rgb(46,66,48)';
+    g.fillRect(0, 0, 128, 128);
+    g.globalCompositeOperation = 'source-over';
+    bossTex = c;
+  };
+  bossImg.src = BOSS_SRC;
+
+  function ellHit(u, v, cx, cy, rx, ry) {
+    var dx = (u - cx) / rx, dy = (v - cy) / ry;
+    return dx * dx + dy * dy <= 1;
+  }
+  function capHit(u, v, x1, y1, x2, y2, r) {
+    var vx = x2 - x1, vy = y2 - y1;
+    var wx = u - x1, wy = v - y1;
+    var t = (wx * vx + wy * vy) / (vx * vx + vy * vy);
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    var px = x1 + vx * t, py = y1 + vy * t;
+    var dx = u - px, dy = v - py;
+    return dx * dx + dy * dy <= r * r;
+  }
+  function bodyHit(u, v, lean) {
+    u -= lean * (v - 0.3);          // 前倾
+    if (ellHit(u, v, 0.50, 0.095, 0.105, 0.082)) return true;   // 头
+    if (ellHit(u, v, 0.50, 0.165, 0.046, 0.036)) return true;   // 颈
+    if (ellHit(u, v, 0.50, 0.320, 0.172, 0.150)) return true;   // 胸
+    if (ellHit(u, v, 0.50, 0.470, 0.152, 0.100)) return true;   // 腹
+    if (capHit(u, v, 0.34, 0.235, 0.205, 0.560, 0.056)) return true;  // 左臂
+    if (capHit(u, v, 0.66, 0.235, 0.795, 0.560, 0.056)) return true;  // 右臂
+    if (capHit(u, v, 0.435, 0.500, 0.405, 0.985, 0.060)) return true; // 左腿
+    if (capHit(u, v, 0.565, 0.500, 0.595, 0.985, 0.060)) return true; // 右腿
+    return false;
+  }
+
+  function drawBoss(cx, feetY, h, el, a, eye, mouth, lean, glitch) {
+    var bw = h * 0.46;
+    var top = feetY - h;
+
+    // 背后的绿气
+    var rg = ctx.createRadialGradient(cx, top + h * 0.35, 0, cx, top + h * 0.35, h * 0.75);
+    rg.addColorStop(0, 'rgba(60,96,60,' + (0.16 * a).toFixed(3) + ')');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(cx - h, top - h * 0.4, h * 2, h * 2);
+
+    if (!bossTex) {
+      // 图没加载好就先给个影子
+      ctx.fillStyle = 'rgba(0,0,0,' + (0.7 * a).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.ellipse(cx, top + h * 0.5, bw * 0.45, h * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    var COLS = 13, ROWS = 28;
+    var cw = bw / COLS, ch = h / ROWS;
+
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.imageSmoothingEnabled = false;
+
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var u = (c + 0.5) / COLS, v = (r + 0.5) / ROWS;
+        if (!bodyHit(u, v, lean)) continue;
+        // 稀疏：留些空洞
+        var pr = hash(c * 13.7 + r * 7.3);
+        if (pr > 0.93) continue;
+
+        var jx = (hash(c * 3.1 + r * 5.7) - 0.5) * cw * (glitch ? 0.35 : 0.06);
+        var jy = (hash(c * 8.3 + r * 2.9) - 0.5) * ch * 0.10;
+        var s = 8 + Math.floor(hash(c + r * 31.7) * 4) * 4;   // 8/12/16/20
+        var sx = Math.floor(hash(c * 2.3 + r * 9.1) * 8) * 8;
+        var sy = Math.floor(hash(c * 6.7 + r * 4.4) * 8) * 8;
+
+        var x = cx - bw / 2 + c * cw + jx;
+        var y = top + r * ch + jy;
+
+        ctx.globalAlpha = a * (0.74 + hash(c * 5.1 + r * 11.3) * 0.34);
+        ctx.drawImage(bossTex, sx, sy, s, s, x - 0.5, y - 0.5, cw + 1, ch + 1);
+      }
+    }
+
+    // 边缘亮块（让它像在反光）
+    ctx.globalAlpha = a * 0.5;
+    for (var i = 0; i < 26; i++) {
+      var uu = hash(i * 4.7 + 1.3), vv = hash(i * 9.9 + 2.1);
+      if (!bodyHit(uu, vv, lean)) continue;
+      ctx.fillStyle = 'rgba(150,178,138,' + (0.25 + hash(i) * 0.4).toFixed(2) + ')';
+      ctx.fillRect(cx - bw / 2 + uu * bw, top + vv * h, cw * 0.6, ch * 0.5);
+    }
+
+    // 眼窝：两个黑洞，里面有一点东西在亮
+    var eyeY = top + h * 0.084;
+    var ew = bw * 0.070, eh = h * 0.020;
+    [-1, 1].forEach(function (sgn) {
+      var ex = cx + sgn * bw * 0.052 - ew / 2;
+      ctx.globalAlpha = a * 0.9;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(ex, eyeY, ew, eh);
+      ctx.globalAlpha = a * 0.5;
+      ctx.fillStyle = 'rgba(0,0,0,.8)';
+      ctx.fillRect(ex - ew * 0.22, eyeY - eh * 0.5, ew * 1.44, eh * 2);
+      if (eye > 0.01) {
+        ctx.globalAlpha = a * eye;
+        ctx.fillStyle = 'rgba(206,80,56,.95)';
+        ctx.fillRect(ex + ew * 0.34, eyeY + eh * 0.3, ew * 0.30, eh * 0.44);
+      }
+    });
+
+    // 嘴：横向裂口，越近张得越大
+    var mw = bw * 0.155, mh = h * (0.010 + 0.038 * mouth);
+    var my = top + h * 0.126;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(118,26,20,.9)';
+    ctx.fillRect(cx - mw / 2, my, mw, mh);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(cx - mw / 2, my + mh * 0.28, mw, mh * 0.72);
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    for (var tt = 0; tt < 4; tt++) {
+      ctx.fillRect(cx - mw * 0.34 + tt * mw * 0.22, my, mw * 0.035, mh * 0.34);
+      ctx.fillRect(cx - mw * 0.28 + tt * mw * 0.22, my + mh * 0.68, mw * 0.035, mh * 0.32);
+    }
+
+    ctx.restore();
+  }
+
+  function drawRoom(el, a) {
+    // 地面
+    var fg = ctx.createLinearGradient(0, H * 0.72, 0, H);
+    fg.addColorStop(0, 'rgba(16,22,17,' + (0.0).toFixed(3) + ')');
+    fg.addColorStop(1, 'rgba(9,13,10,' + (0.9 * a).toFixed(3) + ')');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, H * 0.72, W, H * 0.28);
+
+    // 地平线
+    ctx.fillStyle = 'rgba(132,146,120,' + (0.16 * a).toFixed(3) + ')';
+    ctx.fillRect(0, H * 0.765, W, 1);
+
+    // 远处那盏故障灯
+    var flick = (hash(Math.floor(el / 150)) > 0.3) ? 1 : 0.18;
+    if (el < 1200) flick *= clamp01(el / 1200);
+    var lx = W * 0.70, ly = H * 0.22;
+    var lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, H * 0.30);
+    lg.addColorStop(0, 'rgba(158,176,138,' + (0.30 * a * flick).toFixed(3) + ')');
+    lg.addColorStop(0.4, 'rgba(104,124,98,' + (0.10 * a * flick).toFixed(3) + ')');
+    lg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = lg;
+    ctx.fillRect(lx - H * 0.3, ly - H * 0.3, H * 0.6, H * 0.6);
+    ctx.fillStyle = 'rgba(206,216,192,' + (0.55 * a * flick).toFixed(3) + ')';
+    ctx.fillRect(lx - 2, ly - 1, 4, 3);
+
+    // 两侧墙上的管
+    ctx.fillStyle = 'rgba(120,132,116,' + (0.06 * a).toFixed(3) + ')';
+    ctx.fillRect(W * 0.08, 0, 2, H * 0.78);
+    ctx.fillRect(W * 0.14, 0, 1, H * 0.78);
+    ctx.fillRect(W * 0.86, 0, 2, H * 0.78);
+  }
+
+  function drawKill(el) {
+    // 镜头：扑过来时抖，挨击后只剩轻微晃
+    var shX = 0, shY = 0;
+    if (el > K.rush && el < K.strike) {
+      var k = (el - K.rush) / (K.strike - K.rush);
+      var amp = 2 + k * 9;
+      shX = (Math.random() - 0.5) * amp;
+      shY = (Math.random() - 0.5) * amp;
+    } else if (el >= K.strike) {
+      shX = (Math.random() - 0.5) * 4;
+      shY = (Math.random() - 0.5) * 4;
+    }
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    var roomA = clamp01((el - K.room + 700) / 1100) * (1 - clamp01((el - K.strike) / 500));
+
+    ctx.save();
+    ctx.translate(shX, shY);
+
+    if (roomA > 0.02) drawRoom(el, roomA);
+
+    // 它：远处蹲着 → 抬头 → 站起 → 扑过来 → 俯在脸上
+    if (el > K.room + 500 && el < K.dark + 1600) {
+      var t1 = clamp01((el - (K.room + 500)) / (K.rise - K.room - 500));
+      var t2 = clamp01((el - K.rise) / (K.stand - K.rise));
+      var t3 = clamp01((el - K.stand) / (K.rush - K.stand));
+      var t4 = clamp01((el - K.rush) / (K.strike - K.rush));
+
+      var hh, feet, alpha;
+      var lean = 0.02 + t1 * 0.03 + t3 * 0.10 + ease(t4) * 0.16;
+
+      if (el < K.strike) {
+        hh = H * 0.28 + t2 * H * 0.05 + t3 * H * 0.16 + ease(t4) * H * 0.44;
+        feet = H * 0.82 + t3 * H * 0.04 + ease(t4) * H * 0.14;
+        alpha = clamp01((el - (K.room + 900)) / 1300);
+      } else {
+        var q = clamp01((el - K.strike) / (K.dark - K.strike));
+        hh = H * 0.96 + q * 0.10;
+        feet = H * 1.00 + q * 0.04;
+        alpha = 1 - clamp01((el - K.dark + 400) / 1500);
+        lean = 0.16;
+      }
+
+      var eye = clamp01((el - (K.rise - 200)) / 700);
+      var mouth = clamp01((el - (K.rise + 600)) / 1400) * (0.6 + 0.4 * Math.sin(el / 320));
+      var glitch = el > K.rush && el < K.strike;
+
+      drawBoss(W / 2, feet, hh, el, alpha, eye, Math.max(0.3, mouth), lean, glitch);
+    }
+
+    ctx.restore();
+
+    // 手机：熄屏，掉在地上
+    if (el < 2000) {
+      var fall = clamp01((el - 260) / 900);
+      var pw = Math.min(W * 0.52, H * 0.24);
+      var pcy = lerp(H * 0.46, H * 0.86, ease(fall));
+      var ptilt = lerp(-0.02, 0.42, ease(fall));
+      var pa = 1 - clamp01((el - 1200) / 700);
+      if (pa > 0.02) {
+        ctx.globalAlpha = pa;
+        phoneFrame(W / 2 - fall * W * 0.02, pcy, pw, ptilt, 0, 0, function () { });
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // 爪击
+    if (el >= K.strike - 30 && el < K.strike + 460) drawSlash(el);
+
+    // 挨击的红
+    if (el >= K.strike && el < K.strike + 300) {
+      var ra = 1 - (el - K.strike) / 300;
+      ctx.fillStyle = 'rgba(120,22,16,' + (0.40 * ra).toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 视野收窄：从它脸上的一小圈，缩到全黑
+    if (el > K.strike) {
+      var closeA = clamp01((el - K.strike) / (K.dark - K.strike));
+      var vg = ctx.createRadialGradient(W / 2, H * 0.40, Math.min(W, H) * 0.06,
+        W / 2, H * 0.40, Math.max(W, H) * 0.66);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(0.5, 'rgba(26,4,3,' + (0.22 * closeA).toFixed(3) + ')');
+      vg.addColorStop(1, 'rgba(0,0,0,' + (0.5 + 0.5 * closeA).toFixed(3) + ')');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 全黑
+    if (el > K.dark) {
+      var ba = clamp01((el - K.dark) / 700);
+      ctx.fillStyle = 'rgba(0,0,0,' + ba.toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    grain(el);
+    vignette(el > K.strike ? 0.8 : 0.62);
+  }
+
+
+  function drawSlash(el) {
+    var p = clamp01((el - (K.strike - 30)) / 440);
+    ctx.save();
+    ctx.globalAlpha = (1 - p) * 0.9;
+    ctx.translate(W * (1.15 - p * 1.5), -H * 0.1 + p * H * 0.9);
+    for (var i = 0; i < 3; i++) {
+      ctx.strokeStyle = i ? 'rgba(226,234,220,' + (0.55 - i * 0.14).toFixed(2) + ')' : 'rgba(255,255,255,.85)';
+      ctx.lineWidth = 2 + i * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-W * 0.1 + i * W * 0.06, -H * 0.35);
+      ctx.quadraticCurveTo(W * 0.3 + i * W * 0.05, 0, -W * 0.05 + i * W * 0.07, H * 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ---------- 阶段五：手机关机之后（强开机 / 玩电脑） ---------- */
+  var PC_LEN = 16000;      // 电脑开机这一段有多长
+  var pcOn = false;        // 玩过电脑没有
+  var pcHint = 0;          // 「强开机」按了没反应的时间戳
+
+  // 黑屏之后，右边浮出来的两个选项
+  function offOptions() {
+    var bt = Math.min(52, H * 0.068);
+    var bw = Math.min(W * 0.29, 176);
+    var g0 = homeGeom();
+    var pr0 = g0.cx + g0.w * 0.46;                       // 手机屏幕右边界
+    var bxr = W - bw - Math.min(30, W * 0.055);
+    var bx = Math.max(pr0 + 12, bxr);                    // 桌面够宽就推到屏外
+    if (bx + bw > W - 6) bx = bxr;
+    var gap = bt * 0.40;
+    var top = H * 0.5 - bt - gap * 0.5;
+    var items = [{ id: 'off:power', t: '强开机' }, { id: 'off:pc', t: '玩电脑' }];
+    rr(bx - 12, top - 14, bw + 24, bt * 2 + gap + 28, 6);
+    ctx.fillStyle = 'rgba(0,0,0,.62)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,170,140,.10)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    items.forEach(function (it, i) {
+      var y = top + i * (bt + gap);
+      rr(bx, y, bw, bt, 4);
+      ctx.fillStyle = 'rgba(20,24,20,.88)';
+      ctx.fill();
+      ctx.strokeStyle = i ? 'rgba(152,182,122,.46)' : 'rgba(150,168,140,.26)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.font = '600 ' + Math.max(13, bt * 0.30) + 'px ' + SERIF;
+      ctx.fillStyle = i ? 'rgba(208,218,192,.94)' : 'rgba(166,176,158,.66)';
+      ctx.fillText(it.t, bx + bw / 2, y + bt / 2);
+      hotspots.push({ id: it.id, x: bx + bw / 2, y: y + bt / 2, r: bt * 0.62, hw: bw / 2 + 8, hh: bt / 2 + 8 });
+    });
+
+    // 强开机按了没反应，就摆一句在这儿
+    if (pcHint) {
+      var d = (performance.now() - pcHint) / 1000;
+      if (d < 2.2) {
+        ctx.globalAlpha = d > 1.4 ? (1 - clamp01((d - 1.4) / 0.8)) : 1;
+        ctx.textAlign = 'center';
+        ctx.font = Math.max(11, W * 0.024) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(176,150,128,.78)';
+        ctx.fillText('按了，没反应。', bx + bw / 2, top + bt * 2 + gap + Math.max(20, bt * 0.55));
+        ctx.globalAlpha = 1;
+      } else { pcHint = 0; }
+    }
+  }
+
+  // 开机之后的桌面（CG 尾段和静止画面都用它）——按屏幕左上角给出的一块矩形画
+  function pcDesktop(t, x0, y0, sw, sh, cosy) {
+    // 壁纸
+    var wg = ctx.createLinearGradient(0, y0, 0, y0 + sh);
+    wg.addColorStop(0, '#0a1612');
+    wg.addColorStop(0.55, '#07100d');
+    wg.addColorStop(1, '#040a08');
+    ctx.fillStyle = wg;
+    ctx.fillRect(x0, y0, sw, sh);
+
+    // 淡淡的网格（像方块世界的地平线）
+    ctx.strokeStyle = 'rgba(110,160,120,.06)';
+    ctx.lineWidth = 1;
+    for (var gx = x0; gx < x0 + sw; gx += Math.max(22, sw * 0.085)) {
+      ctx.beginPath(); ctx.moveTo(gx, y0 + sh * 0.40); ctx.lineTo(gx, y0 + sh); ctx.stroke();
+    }
+    for (var gy = y0 + sh * 0.40; gy < y0 + sh; gy += Math.max(18, sh * 0.055)) {
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x0 + sw, gy); ctx.stroke();
+    }
+
+    // 桌面图标
+    var s2 = Math.max(14, sw * 0.066);
+    [{ t: '内网', i: 0 }, { t: '档案', i: 1 }, { t: '回收站', i: 2 }].forEach(function (o) {
+      var iy = y0 + sh * (0.13 + o.i * 0.24);
+      rr(x0 + sw * 0.10 - s2 / 2, iy - s2 * 0.55, s2, s2, 3);
+      ctx.fillStyle = 'rgba(150,180,140,.13)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(150,180,140,.22)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = Math.max(8, sh * 0.048) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(190,206,180,.60)';
+      ctx.fillText(o.t, x0 + sw * 0.10, iy + s2 * 0.52);
+    });
+
+    // 任务栏
+    var tbH = sh * 0.085;
+    ctx.fillStyle = 'rgba(10,16,13,.94)';
+    ctx.fillRect(x0, y0 + sh - tbH, sw, tbH);
+    ctx.fillStyle = 'rgba(120,160,110,.20)';
+    ctx.fillRect(x0, y0 + sh - tbH, sw, 1);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 ' + Math.max(8, sh * 0.062) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(196,208,186,.78)';
+    ctx.fillText('开 始', x0 + sw * 0.045, y0 + sh - tbH / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(176,190,170,.62)';
+    ctx.fillText('05:12', x0 + sw * 0.955, y0 + sh - tbH / 2);
+
+    // 桌面上一个光标，慢慢闪
+    if (cosy && (Math.floor(t / 620) % 2 === 0)) {
+      ctx.fillStyle = 'rgba(210,220,200,.55)';
+      ctx.fillRect(x0 + sw * 0.52, y0 + sh * 0.46, 1.5, Math.max(8, sh * 0.035));
+    }
+  }
+
+  function drawPC(el) {
+    var cx = W / 2, cy = H * 0.455;
+    var mw = Math.min(W * 0.88, H * 0.66), mh = mw * 0.63;
+    var mx0 = cx - mw / 2, my0 = cy - mh / 2;
+    var tw = Math.min(W * 0.115, 78), th = tw * 2.5;
+    var tx = Math.max(48, mx0 - tw * 0.55);
+
+    // 房间
+    ctx.fillStyle = '#040605';
+    ctx.fillRect(0, 0, W, H);
+    var lamp = ctx.createRadialGradient(cx, my0 + mh * 0.35, 0, cx, my0 + mh * 0.35, Math.max(W, H) * 0.85);
+    lamp.addColorStop(0, 'rgba(96,110,82,.10)');
+    lamp.addColorStop(0.4, 'rgba(40,48,38,.045)');
+    lamp.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, W, H);
+
+    // 桌子
+    var deskY = my0 + mh + mh * 0.055;
+    ctx.fillStyle = 'rgba(15,19,16,.94)';
+    ctx.fillRect(0, deskY, W, H - deskY);
+    ctx.fillStyle = 'rgba(150,170,140,.12)';
+    ctx.fillRect(0, deskY, W, 1);
+
+    // 机箱 + 指示灯
+    rr(tx, deskY - th * 0.86, tw, th * 0.86, 3);
+    ctx.fillStyle = 'rgba(11,14,12,.98)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140,160,130,.14)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(160,180,150,.10)';
+    ctx.fillRect(tx + tw * 0.12, deskY - th * 0.80, tw * 0.76, 2);
+    ctx.fillRect(tx + tw * 0.12, deskY - th * 0.74, tw * 0.76, 2);
+
+    var ledOn = el > 1100;
+    var ledA = ledOn ? 1 : (Math.floor(el / 700) % 2 ? 0.55 : 0.06);
+    ctx.fillStyle = 'rgba(' + (ledOn ? '120,230,140,' : '230,190,120,') + ledA + ')';
+    ctx.beginPath();
+    ctx.arc(tx + tw * 0.5, deskY - th * 0.62, Math.max(2.5, tw * 0.055), 0, 6.283);
+    ctx.fill();
+
+    // 显示器外壳
+    rr(mx0, my0, mw, mh, 4);
+    ctx.fillStyle = 'rgba(10,13,11,.97)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140,158,132,.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // 支架
+    ctx.fillStyle = 'rgba(10,13,11,.97)';
+    ctx.fillRect(cx - mw * 0.05, my0 + mh, mw * 0.10, mh * 0.055);
+    ctx.fillRect(cx - mw * 0.14, deskY - 4, mw * 0.28, 6);
+
+    // 屏幕
+    var sx0 = mx0 + mw * 0.026, sy0 = my0 + mh * 0.030;
+    var sww = mw * 0.948, shh = mh * 0.865;
+    ctx.save();
+    rr(sx0, sy0, sww, shh, 3);
+    ctx.fillStyle = '#030504';
+    ctx.fill();
+    ctx.clip();
+
+    var k = el / 1000;
+    if (el < 1050) {
+      // 熄着，只有一点反光
+      ctx.fillStyle = 'rgba(70,86,66,.05)';
+      ctx.fillRect(sx0, sy0, sww, shh * 0.4);
+    } else if (el < 1400) {
+      // 白线一下撑开
+      var o = (el - 1050) / 350;
+      var hh2 = Math.max(2, shh * o);
+      ctx.fillStyle = 'rgba(214,224,204,' + (0.55 + 0.4 * o) + ')';
+      ctx.fillRect(sx0, sy0 + (shh - hh2) / 2, sww, hh2);
+    } else {
+      // 显像管亮起来
+      var br = clamp01((el - 1400) / 900);
+      ctx.fillStyle = 'rgba(18,30,24,' + (0.35 + br * 0.55) + ')';
+      ctx.fillRect(sx0, sy0, sww, shh);
+      var glow = ctx.createRadialGradient(sx0 + sww / 2, sy0 + shh / 2, 0, sx0 + sww / 2, sy0 + shh / 2, sww * 0.9);
+      glow.addColorStop(0, 'rgba(120,190,140,' + (0.10 * br) + ')');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(sx0, sy0, sww, shh);
+
+      if (el < 6600) {
+        // BIOS 自检
+        var lines = [
+          'LORA BIOS v1.02   (C) 云历 100',
+          'CPU  : GUN7Z-CORE 8  3200MHz',
+          'MEM  : 65536K ........ OK',
+          'DETECTING DEVICES ...',
+          '  IDE 0 MASTER : LORAT-ROOM-01',
+          '  KEYBOARD .... OK',
+          '  MOUSE ....... OK',
+          'LOADING BOOT SECTOR ...'
+        ];
+        var fs2 = Math.min(sww * 0.032, shh * 0.062);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = Math.max(9, fs2) + 'px ' + MONO;
+        for (var li = 0; li < lines.length; li++) {
+          var at = 2350 + li * 470;
+          if (el < at) break;
+          var part = Math.min(1, (el - at) / 260);
+          var str = lines[li].slice(0, Math.ceil(lines[li].length * part));
+          ctx.fillStyle = 'rgba(178,214,168,' + (0.86 * clamp01((el - 1400) / 500)) + ')';
+          ctx.fillText(str, sx0 + sww * 0.055, sy0 + shh * 0.075 + li * fs2 * 1.45);
+        }
+        // 光标
+        if (Math.floor(el / 480) % 2 === 0) {
+          var cy2 = sy0 + shh * 0.075 + Math.min(lines.length, Math.floor((el - 2350) / 470) + 1) * fs2 * 1.45;
+          ctx.fillStyle = 'rgba(178,214,168,.8)';
+          ctx.fillRect(sx0 + sww * 0.055, cy2, fs2 * 0.55, fs2 * 0.9);
+        }
+      } else if (el < 7600) {
+        // 系统标 + 进度条
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '900 ' + Math.min(sww * 0.13, shh * 0.22) + 'px ' + SERIF;
+        ctx.fillStyle = 'rgba(200,224,190,.92)';
+        ctx.fillText('LORA', sx0 + sww / 2, sy0 + shh * 0.36);
+        ctx.font = (shh * 0.050) + 'px ' + MONO;
+        ctx.fillStyle = 'rgba(150,180,140,.62)';
+        ctx.fillText('洛亚提 · 内网终端', sx0 + sww / 2, sy0 + shh * 0.53);
+
+        var pw = sww * 0.52, ph = Math.max(3, shh * 0.014);
+        var px = sx0 + (sww - pw) / 2, py = sy0 + shh * 0.64;
+        ctx.fillStyle = 'rgba(120,150,112,.22)';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.fillStyle = 'rgba(150,210,140,.85)';
+        ctx.fillRect(px, py, pw * clamp01((el - 6600) / 900), ph);
+      } else {
+        // 桌面
+        pcDesktop(el, sx0, sy0, sww, shh, true);
+      }
+      // 扫描线
+      for (var sl = 0; sl < 40; sl++) {
+        ctx.fillStyle = 'rgba(0,0,0,.14)';
+        ctx.fillRect(sx0, sy0 + sl * (shh / 40), sww, 1);
+      }
+    }
+    ctx.restore();
+
+    // 屏幕玻璃反光
+    var rf = ctx.createLinearGradient(sx0, sy0, sx0 + sww, sy0 + shh * 0.6);
+    rf.addColorStop(0, 'rgba(220,232,212,.055)');
+    rf.addColorStop(0.42, 'rgba(220,232,212,0)');
+    rf.addColorStop(1, 'rgba(220,232,212,0)');
+    ctx.fillStyle = rf;
+    rr(sx0, sy0, sww, shh, 3);
+    ctx.fill();
+
+    // 开机那一刻的白闪
+    if (el > 1050 && el < 1160) {
+      ctx.fillStyle = 'rgba(226,236,216,' + (0.35 * (1 - (el - 1050) / 110)) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // 右下角的时间码
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = (H * 0.014) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(150,170,140,.30)';
+    ctx.fillText('PC · 05:11', W - 22, H - 20);
+  }
+
+  /* ---------- 电脑桌面上那个 PCL ---------- */
+  var PCL_SRC = 'data:image/webp;base64,UklGRroRAABXRUJQVlA4WAoAAAAQAAAAYwAAYQAAQUxQSMcGAAABoIVt2+I0+pJAkqFu+BZZqbu36Lq7u29S1t3dXbC6u+JUKAPUvSEr9SL14mn8n+9g9P9n9jwiJgD0OGZvQ9kIkDUPfeODpweA8ToQ8VCahC1+8iHEYPFoE0BK1jUWm83Emvnq2xzOT97MyhzQ55vCm5Rc14mI63pxNtugBSeaBETEkw9FpO4OnFpUXv5Ad8bG1AcRkfj8ix6/hDv7KkhqQETPNr500xEBZbt+m4WS3jX9mBq0F2WJj6DnWjXqBUEKW9/ozUyPaWnrUWHbZcSvACKiraLEY5oovZzJzOOXO8NKxK7PchfV595gA4hYSAlX9mNkdB1q7XkJAMYsPkWokPx4JuxFqP1CMwBYU77100BcFMlC790U/osDcdRHQSoHo1kwz6XQNkkCepZR8aSxwG2igA4peCBEw5fFAOdsofGTzMDDNFrH0rN840eKwlcy5h9puKLp2dYhzTUjzVIQVxrSLt9ED3KotLvGyUC/R5Y1E42eAQZv7KSB+JZJBsB61RJtWsaxYM2lc/bTLKsMQPzHp7VYFcUCJG6jgtj+vkkO4NmwuvZsYPOODjroilaS4VW3zMpI5EdeOhfHKLmqSVXbjcCqrYAOPq/Etl5VYSQzkLqucecpCk4lvXeo6coGhnsN7H5LixYn+Aq33/esEu6tPUTZxh4sAYDlF4muilVNIYlw19ohdltqVuYAJQBxXzcKCvwPAevDDvu956pu6ma96qFvCgr+eO3hyb1BU8ugt3YTmcpezJmHZ2cM6gVMxuaFJNpuBCPv8cMlARHnRWpl5dTbLJx8hI0T20xSZjsntlo5sd0sY42y95j60mZsnAScWotEz8I6Xm3tqo+reenaN2bX8TxfuzJR6uriGp7na2f9XsfzfM2GCVI9C+t4vmrTP+tvgsdqeOU1j0kkNaB671GU39SIYt91Ulk+FLc0oeRrUkkNKPbfCFCAaueYNBNCCjoDEvi1ChKWKrIqw28BClW5YwGs9kGNGmha3U2ZPM9JjLwgNcOaekBV4yCbZU7NTj8bbQs/7ZH0a35RWMWZmfkTu3+WXyFInaw6QFT5d1a/dATZbU5O96GWzvgGpF3MUviJNG0WXkmvgyX8LUObLaPPUMNLWvh9vrA2R4rDmjSXhOit1SD4dlpGkTY6foOow7l2KDCWtuQtGvgeN5hTD8DQberwyC/l+iPnQ3KVaQDDXOrQe1R/3kdXy+EqACjQQAjpz5eRq6AZAO5sU2eEl5/YrgDvne58ZacRhY4TJYeR1ZZfzyEi/0tQxX+5QUT8b7UGKo8w0zCYR8S/Mnwqqm72ImLx65QEhgZVUXjvRTrBBY3sJM9BxD9uCqi5wYPYlU5pRs9aTc7MqBA0uGLqXwV/TZnSrqI67sPCwpxIp0zti8vUeb6Khfc14a2ZXg2SQJzUoILnQCyXB051pwYCjP1HE3uim5XlFmWhpzQgv9kB4IZGFYQQrObg5SARC4gdPkIIwcMJEnF/IxEI8XsJIYjCRyD5okAIIbi9P7woEEIEJcv6AgCY0nOcCh3f73cX5dz9iPO9HfUul8s974V3Fm6td7lc7rJXnc8MfWb6yyXu3X/srt+2pb5+z8dvV33lcDodI+//7ZBLPMfp+PWQy+We73BKT38uHrScTrAuZlQzCmFCCMG50Xd0CkQS0fOzB5GQju87iNhz560dKM49hUQcDiMKhBDMBcp/IAYOHiYo29VwXkB5oV1ARBTaBRQL584JEh0hVFtIqwCNUHju/6B+oIEJ584JovN3goH57r3PLzp+nZHxfTN8Isw3rPDpo3eDk0h8SC1PNw2T4i3DTqLYm0Xt9lbEloKjOpgXCZDlk6iLoRbhrKmb23seW/6dfM3mNAAYVl7D8zUV6UDfwnE2eJOttqlWjrMAgNnOcRxnNzMgme5RIDDgywZ99tsuFWxaVMoAeVQn4AiJOl5KtWSdp9eVrpf+pc37q07MjwKwv7TJS+u/eL2Y+if1jUrsBTbug4rV7bSKrXqRzSyuvYj0d/TRV69aZLJ9or6SGtg4M0hf/Q6wUdVdX8NPM9H1KOg7y8eC57UInY04w0IxBzrnqugJB24E3X9Hb+tVoPvhFbRIUQroPnkX0u3cnDMA9P880vT+veq2KBMY4C1e7ZoKbo2OBGNMOKLZialmMMzIVVo1vGICA73Tq03nXWCo3fNbtQj/ZDUWiLrfo8zX6F7r+qkHGG3fciWC++WkaGu0DQzWfHvRSSXbUkxgxNeeR6XBR8GYHajQ998vPQ1qUovUuZIfb46LAIOOOywKzR5hAwO3zBbN7QHGntna4d4yGvQPAFZQOCDMCgAAEC4AnQEqZABiAD5tLJNGpCIhoS0U29iADYlkAMzIOY+xirnnxDyc5v+1jOb6IvFQ6bP9C9B3nLei/+8+oB+yvWq+hf5c3sx+VFmonZh9rnnj41Paftpy3+je0h+18x/9B4Q/CvUC/H/5f/it75sf6BHtt9O79nUy73f7D3AP5h+33q5/ufB2+zeoH/PP7v6rv9n/5/9L56Ppj/z/5f4B/1o63PovfsA2NT9WSXp3SZqzF4YFiKaSNtkiTX7ZFdAz5dMn/K57iME4fVsoJUN45+eBHMjZCU4c1ctsY0TnmK626VhQM12Bzg0jEjrN3w1WorMqJhzfQHk3ISdJOjOE7xVJBg4MYhIpil2Po5D5/pJ35DleZffx7qMvaUsBtbPsIx2FTxtdQKH+CPCduNYIL6DGfq5hlrBf12Bb+XWPI0X0GUJNEe/o5rqR+lMwGWln5NeMZPPMHoQkLZYNbpWmC5ZpTkMME96bGDFauMtlrs7Ieu+Ssek8nDAA/v5HlUn9npCULbTh9vVFl4wAEtrwo79bPe7qug/7497ccHa0fNGQ/Xj9pis3UZl/TA1YPq/2pm+VMPC2+v83GOKbe8asPuW9/WnSW91jP8wXtQB7FkDqAyQHMzkFtyoTzTweos6GkdabQCEls4WxMu8QHbcYHVF2ceOumKb+H71F4hfEHjni23VE8cP7+HkEsg/Tan/lLb/mKc/BIwTEbmSor7H/4Kb2cCibHw8qyv9Uro0gl7sBrAso/V1AnOv542I9RQi3DZ3bkPiCKzjcUXFix161JFjxZXgTA/vvxG/Yzff8u8R89SOH4ws915+JEXd0DAb0uTtFjoSlSNaXq6ochI7lFQedePPmT628cSpubQQMWXm9RJRS8K/Z1xNaUPz6FsruKIJyD0nFJVshIJAoeP+NjD5qicUoUAk20qQUTa0guAArWawphXPe8R6VcBlbRSNXv5wU1pLxzLHa8lcqhhP/W5/rxPj41o8vvk3gY1wP7WFomlQcQ7XcoJKn/+/JXjXCwqVDIgskSwW5DTEz0zsv2BkF0iQPRD2rVbfpHINK2fup9qNBgqHNniVmZmyqTx7s2D5QwWoB85+pYgATFsRl9KANP9kuK0sB9mMq1kjJj+/r4/cFUpsUMTb47kyOq3bSsFHBpky2BGqxWVXP/DoVyYRUEVkNhXEMGAESQ5zIhG1INtPAs0eY6vflQKeV//ejE+FLSPfUktjne/AExMAV8hGP8ZaYZ+HcPy1iwVyW8qDXPnRol81Rx5vtekt/2ajnIvSSSWfSLB/I2/+/sTXvWvtGQzaZNy03n2pFU6+mQ20J/ipWuu6NmDP/63NJ79JdsurSHW8IWVOwwx3XXf8vUNNJmEZp3CA3HKzLiHHoSiplOHUOoo1qEeNuNA9fObYR6AuFyu99X7XX3H7pwL7yjA11jZGoVFb5h/jdlN/Phh6Aq5luhZFOLYH//Zu6xQML8TPjb5VoZ8bfSQNDaJXAsSVN//4p3FivO+6dAaEhSbSDEdhtY3lqdwADZ1ryRTogWghpN4VLQAlVfEvxn7M96v9fcwldl/af71EH+u2axd/boizI7p632HxROt/84VsY4lhjy6fgyEBifxXTsVb8GfuSKcx0XQRVjN6Keb9uMpvj1y31SkFHxwm270Nt2Oxv45sttC8TixkPUC6nB7qcAr3jVZZYUa0hhHaUgG3WJBQ83rfp6JzcoxJWzfRLriM/YU9/lyftXEPkphqL9TIvVDWu8b2vdm8SeRMLELU1S4yW4S3fBjsTo08dOrtXonh6UEzYKojplMPEjlcnMjoZlp/7P7PJGUCGkqNMjJFfVpRwWPa0+TKeEZMQpD+Yqvjv80lb9xwEGqegTESmpw3sRpS5zaZt6VdXzoOvnEvJsFi8jiBKzNH79qvOsnSGrRPQmhgiYY+7EOuy9i/tS3RwazQQu34VgsDDv6PUtxfQnLbhYKVBt/s1gWttAky1sFfRVj2d2o5MJ13F9mpUgjlOZ6A1mzRj8d9maxA5j/nSfCp38sy4dLju12pgPpggc2RCSk9zfgsI3xStGRynYmQPUtw3d0tuMjD/MNfxf0FKJoTKkBC7HITJyj/5sVqoGvk8xa4GO1s7keTIhRZLueEP6yh3wdX7oOsHUnOOL2WPd7bp/qTZob7hcBAb64JXYwWomB1C9dg4SEwYXvsxNZMcA0jN3WTo/rV+MezTPlDZ/B/xWuc+TJObPLrjMv3WYl7QSoA3eeq9PszkIWjzZ/lzb5xV/JDnMN1o/XA0su5gm4sJ5ivYp2yaFKQQ5OrhQKhtel119yYq3VwoKNQWr8VIYoqZGysf34BfXNl1yPqRcjuPMFV7ErUKp07YF3Wwq+KeqrE2GFNFSD9FhxddmJUgbuWgy19vY5g2pZvXtYi9dGFHJwOKqtGdJ8MAWRlUGPgGnhccSHlsbX8oSyXqiIuZmJ63vZMDOwTGQ5fMAAYy8XnhsZqu7WU9QrmasESQ9cLGMMHO/H8NhPdWLI7J6x/x3179enoHYuS8PRAWmnQW1UFzoXgdP3bISBM4nGj9Vz+7tZFOi4NjY4uDUsqafwnRXBT/KTk9hxkVX0CB3/MO8YqmPXD/6Oha7LRttUuKpr1t8xR6RaP+8MtkelS2C2dkOAUh9eHvy/WGgMumc957+WemMGl0rmA2Hg67rW0v9U3WCUcI1pMtVUu96JuSrmwK76rpXPMTn9FMz82hdx1z9FbL7oxmcmC0KsSViUDYp5GSQIMFi8JQFaYdurJcndqkaLTbyeZxVEgK70TxK8lIt1M8s+IvxhQKKgxo97KmUGrd9npF1qzMGHemJd5qtDiLrooiO7qwEXAuid01/HYW/xMWE2i3Wys5TElpmoeIzDu7CkVf/NWfEnQp3sP6Nd/qIe3N6fQRSjSV4J9vD5QdC1kQWwZm2nu8/322a8d3QXvCouvooQpYYhXwoXTxQNCMFnnZc9WzBvg6EsGq9Pe1zMDpFqhxHdrrnMFMTkZPzyiracFukvg9/xAF/2cU9g29pH4fJe52Sm0ID3hepxpcau01XDmWWUvnFahUHa/8kjFTq93bbVhZs4tb+i2wTHZT+V6v13uAdQJfrcFC6j8EIQWGJm6GM/SyJsAhvn68+/RBzWZHUjS+w8wtTsc8IDBdjOYec5XYUhAq8vJ44TMHfyX87uLeHIN7p5iWdxjilpqG4kt/l69RiOEw58m85x41ElhkoiWAhuvVXLj2baFc8vIklSZnIubpFVE9Ydo9vjW7F4vAUOdz6HDsYsruHLcKgqZD+Kw/EaEYhR53TszglLi2bHj8lJrQgHwACTBNjeNKKeEQRD9hAibCRTj3XkAhecPLxNosNSZi9aPhdawEgTsrHjZrvQZDDsHlRJMsgbPT4dJPP7kvuwlikLR4FGuMuR5ulygGjKrW0YNNaN1J433sr2/xIOddZtU/kSPb7d0CC4YVbdR1PXr7dNiRVcnc9Q1vE/BMFfgI3uUOhg5RLjnfFeVv+tPNdaZkoMR3UwGKDMK2WXIPpisCHW3jzp6Ag6ev6f2N8O9SGk7DD7dYkmxX/VrDPUaiPrU8Lmg1Snt6jojzVI40v3cXaOrXIW+SMkwGEYX+FO///f6/LXHjZhxEDZuylZLX4AJszMG7+bdAU2VWPEy4uxgxHicNSgDs5iWDlA50qwrAAAAAAA==';
+  var pclImg = null;
+  var pclOpen = false, pclRun = false, pclT0 = 0, pclDone = false;
+
+  function pclLogo() {
+    if (!pclImg) { pclImg = new Image(); pclImg.src = PCL_SRC; }
+    return (pclImg.complete && pclImg.naturalWidth) ? pclImg : null;
+  }
+
+  // 桌面上的图标（在开机之后的静止桌面里）
+  function pclIcon(x, y, s) {
+    var im = pclLogo();
+    rr(x - s / 2, y - s / 2, s, s, 3);
+    ctx.fillStyle = 'rgba(16,22,18,.92)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,180,140,.24)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (im) {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.drawImage(im, x - s * 0.40, y - s * 0.40, s * 0.80, s * 0.80);
+      ctx.restore();
+    } else {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 ' + (s * 0.44) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(200,214,190,.85)';
+      ctx.fillText('P', x, y + s * 0.02);
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = Math.max(8, s * 0.40) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(190,206,180,.62)';
+    ctx.fillText('PCL', x, y + s * 0.60);
+  }
+
+  // 打开之后的启动器窗口
+  function pclWindow(x0, y0, sw, sh) {
+    var wx = x0 + sw * 0.10, wy = y0 + sh * 0.11;
+    var ww = sw * 0.80, wh = sh * 0.72;
+
+    // 先把桌面压暗
+    ctx.fillStyle = 'rgba(2,4,3,.55)';
+    ctx.fillRect(x0, y0, sw, sh);
+
+    rr(wx, wy, ww, wh, 4);
+    ctx.fillStyle = 'rgba(12,16,14,.97)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,180,140,.34)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 标题栏
+    var tbh = Math.max(16, sh * 0.085);
+    ctx.fillStyle = 'rgba(22,30,24,.98)';
+    ctx.fillRect(wx, wy, ww, tbh);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = Math.max(9, sh * 0.034) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(200,214,192,.88)';
+    ctx.fillText('Plain Craft Launcher 2', wx + ww * 0.035, wy + tbh / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(170,184,160,.62)';
+    ctx.fillText('×', wx + ww * 0.965, wy + tbh / 2);
+    hotspots.push({ id: 'pcl:close', x: wx + ww * 0.955, y: wy + tbh / 2, r: Math.max(14, tbh * 0.62) });
+
+    // Logo + 名字
+    var im = pclLogo();
+    var ls = Math.min(ww * 0.26, wh * 0.34);
+    if (im) {
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(im, wx + ww * 0.06, wy + tbh + wh * 0.07, ls, ls);
+      ctx.restore();
+    }
+
+    var tx = wx + ww * 0.06 + ls + ww * 0.045;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = Math.max(10, sh * 0.042) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(226,232,214,.92)';
+    ctx.fillText('SIMMC 推荐整合 1.3', tx, wy + tbh + wh * 0.10);
+    ctx.font = Math.max(8, sh * 0.030) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(150,170,142,.66)';
+    ctx.fillText('Fabric 1.21 · 288 个文件 · 65 个模组', tx, wy + tbh + wh * 0.26);
+
+    // 分隔线
+    ctx.fillStyle = 'rgba(130,160,124,.20)';
+    ctx.fillRect(wx + ww * 0.05, wy + tbh + wh * 0.42, ww * 0.90, 1);
+
+    // 日志
+    var logs = [
+      '校验游戏文件 ... 288 / 288',
+      '加载模组 ... 65 个',
+      '分配内存 4096 MB',
+      '连接 play.simmc.cn ...'
+    ];
+    var ly = wy + tbh + wh * 0.40;
+    ctx.font = Math.max(9, sh * 0.030) + 'px ' + MONO;
+    var shown = pclRun ? Math.min(logs.length, Math.floor((performance.now() - pclT0) / 900) + 1) : 0;
+    for (var i = 0; i < logs.length; i++) {
+      if (i >= shown) break;
+      ctx.fillStyle = 'rgba(168,196,158,.62)';
+      ctx.fillText('> ' + logs[i], wx + ww * 0.06, ly + i * sh * 0.032);
+    }
+
+    // 进度条 + 按钮
+    var by = wy + wh - Math.max(26, wh * 0.20);
+    var pgr = pclRun ? Math.min(1, (performance.now() - pclT0) / 4200) : 0;
+    var pw = ww * 0.62, ph = Math.max(4, sh * 0.014);
+    ctx.fillStyle = 'rgba(120,150,112,.20)';
+    ctx.fillRect(wx + ww * 0.06, by - sh * 0.026, pw, ph);
+    ctx.fillStyle = pclDone ? 'rgba(150,210,140,.9)' : 'rgba(140,190,130,.82)';
+    ctx.fillRect(wx + ww * 0.06, by - sh * 0.026, pw * pgr, ph);
+
+    var bw2 = ww * 0.30, bh2 = Math.max(20, sh * 0.085);
+    var bx2 = wx + ww - bw2 - ww * 0.05;
+    rr(bx2, by, bw2, bh2, 3);
+    ctx.fillStyle = pclDone ? 'rgba(30,44,30,.95)' : 'rgba(40,62,40,.95)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,200,132,.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Math.max(9, sh * 0.034) + 'px ' + SERIF;
+    ctx.fillStyle = 'rgba(214,232,200,.95)';
+    ctx.fillText(pclDone ? '正在启动' : (pclRun ? '启动中…' : '启动游戏'), bx2 + bw2 / 2, by + bh2 / 2);
+    if (!pclRun) hotspots.push({ id: 'pcl:start', x: bx2 + bw2 / 2, y: by + bh2 / 2, r: Math.max(bh2, bw2) * 0.55, hw: bw2 / 2 + 4, hh: bh2 / 2 + 4 });
+
+    if (pclDone) {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.font = Math.max(8, sh * 0.026) + 'px ' + MONO;
+      ctx.fillStyle = 'rgba(176,196,164,.62)';
+      ctx.fillText('等待服务端响应…', bx2 - ww * 0.02, by + bh2 / 2);
+    }
+  }
+
+  // 开机之后停在这块桌面上（右边给一个关机）
+  function drawPCD(el) {
+    var cx = W / 2, cy = H * 0.455;
+    var mw = Math.min(W * 0.88, H * 0.66), mh = mw * 0.63;
+    var mx0 = cx - mw / 2, my0 = cy - mh / 2;
+
+    ctx.fillStyle = '#040605';
+    ctx.fillRect(0, 0, W, H);
+    rr(mx0, my0, mw, mh, 4);
+    ctx.fillStyle = 'rgba(10,13,11,.97)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140,158,132,.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(10,13,11,.97)';
+    ctx.fillRect(cx - mw * 0.05, my0 + mh, mw * 0.10, mh * 0.055);
+    ctx.fillRect(cx - mw * 0.14, my0 + mh + mh * 0.055 - 4, mw * 0.28, 6);
+
+    var sx0 = mx0 + mw * 0.026, sy0 = my0 + mh * 0.030;
+    var sww = mw * 0.948, shh = mh * 0.865;
+    ctx.save();
+    rr(sx0, sy0, sww, shh, 3);
+    ctx.clip();
+    pcDesktop(now2(), sx0, sy0, sww, shh, true);
+    ctx.restore();
+
+    // 桌面上的 PCL 图标；点开就是启动器窗口
+    if (!pclOpen) {
+      var ics = Math.max(20, sww * 0.070);
+      var icx = sx0 + sww * 0.245, icy = sy0 + shh * 0.15;
+      pclIcon(icx, icy, ics);
+      hotspots.push({ id: 'pcl:open', x: icx, y: icy, r: Math.max(ics, sww * 0.055) * 0.72 });
+    } else {
+      if (pclRun && !pclDone && performance.now() - pclT0 > 4200) pclDone = true;
+      pclWindow(sx0, sy0, sww, shh);
+    }
+
+    // 右边：关掉电脑（窗口开着的时候先不摆）
+    if (!pclOpen) {
+      var bt = Math.min(52, H * 0.068), bw = Math.min(W * 0.29, 176);
+      var bx = W - bw - Math.min(30, W * 0.055);
+      rr(bx, H * 0.5 - bt / 2, bw, bt, 4);
+      ctx.fillStyle = 'rgba(20,24,20,.88)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(152,182,122,.40)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + Math.max(13, bt * 0.30) + 'px ' + SERIF;
+      ctx.fillStyle = 'rgba(202,214,190,.92)';
+      ctx.fillText('关掉电脑', bx + bw / 2, H * 0.5);
+      hotspots.push({ id: 'off:pcoff', x: bx + bw / 2, y: H * 0.5, r: bt * 0.62, hw: bw / 2 + 8, hh: bt / 2 + 8 });
+    }
+  }
+
+  function now2() { return performance.now(); }
+
+  /* ---------- 阶段三：你已死亡 ---------- */
+  function drawDead(el) {
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    // 底光：心跳两次然后停
+    var pulse = clamp01((el - 300) / 2600);
+    var beat = Math.max(0, Math.sin(el / 190) * Math.exp(-el / 1400));
+    var rg = ctx.createRadialGradient(W / 2, H * 0.5, 0, W / 2, H * 0.5, Math.max(W, H) * 0.7);
+    rg.addColorStop(0, 'rgba(96,16,12,' + (0.10 + 0.16 * beat * (1 - pulse)).toFixed(3) + ')');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(0, 0, W, H);
+
+    var p = clamp01((el - 420) / 900);
+    var jit = RM ? 0 : (Math.sin(el / 21) * 1.2 * (1 - clamp01(el / 2400)));
+
+    // 大标题：你已死亡
+    var size = Math.min(W * 0.20, H * 0.16, 168);
+    var gap = size * 0.09;
+    var fit = W * 0.86;
+    ctx.font = '900 ' + size + 'px ' + SERIF;
+    var wid = 0;
+    '你已死亡'.split('').forEach(function (ch) { wid += ctx.measureText(ch).width; });
+    wid += gap * 3;
+    if (wid > fit) { size *= fit / wid; gap = size * 0.09; }
+
+    ctx.save();
+    ctx.globalAlpha = p;
+    ctx.shadowColor = 'rgba(170,46,34,.65)';
+    ctx.shadowBlur = size * 0.42;
+    ctx.textAlign = 'center';
+    spaced('你已死亡', W / 2 + jit, H * 0.485, size, gap, '#e6dfcb', p, '900');
+    ctx.restore();
+
+    // 红线
+    var lw = W * 0.42 * clamp01((el - 900) / 1100);
+    if (lw > 1) {
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = '#a83c2a';
+      ctx.fillRect(W / 2 - lw / 2, H * 0.485 + size * 0.62, lw, 2);
+      ctx.globalAlpha = 1;
+    }
+
+    // 小字
+    var sa = clamp01((el - 1300) / 900);
+    ctx.save();
+    ctx.globalAlpha = sa;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Math.max(10, size * 0.16) + 'px ' + MONO;
+    ctx.fillStyle = 'rgba(160,168,150,.9)';
+    ctx.fillText('WOSHILONG · 地下建筑部', W / 2, H * 0.485 - size * 0.86);
+    ctx.fillStyle = 'rgba(120,128,112,.75)';
+    ctx.font = Math.max(9, size * 0.125) + 'px ' + MONO;
+    ctx.fillText('洛亚提自由联邦 · 地下组织', W / 2, H * 0.485 + size * 1.28);
+    ctx.restore();
+
+    grain(el);
+    vignette(0.72);
+  }
+
+  /* ---------------- 声音（全部现场合成，无音频文件） ---------------- */
+  var AC = null, master = null, noiseBuf = null;
+  var cueTimers = [];
+  var ringTimer = 0;
+
+  function audioInit() {
+    if (AC) return;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    AC = new C();
+    master = AC.createGain();
+    master.gain.value = 0.9;
+    master.connect(AC.destination);
+
+    var len = Math.floor(AC.sampleRate * 2);
+    noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
+    var d = noiseBuf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+
+  function tone(f1, f2, dur, type, g, delay) {
+    if (!AC) return;
+    var t0 = AC.currentTime + (delay || 0);
+    var o = AC.createOscillator();
+    var gn = AC.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(Math.max(20, f1), t0);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f2 || f1), t0 + dur);
+    gn.gain.setValueAtTime(0.0001, t0);
+    gn.gain.linearRampToValueAtTime(g, t0 + Math.min(0.04, dur * 0.25));
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(gn);
+    gn.connect(master);
+    o.start(t0);
+    o.stop(t0 + dur + 0.03);
+  }
+
+  function hiss(dur, type, freq, q, g, delay) {
+    if (!AC) return;
+    var t0 = AC.currentTime + (delay || 0);
+    var src = AC.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = true;
+    var flt = AC.createBiquadFilter();
+    flt.type = type || 'bandpass';
+    flt.frequency.value = freq || 800;
+    flt.Q.value = q || 1;
+    var gn = AC.createGain();
+    gn.gain.setValueAtTime(0.0001, t0);
+    gn.gain.linearRampToValueAtTime(g, t0 + Math.min(0.12, dur * 0.2));
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(flt);
+    flt.connect(gn);
+    gn.connect(master);
+    src.start(t0);
+    src.stop(t0 + dur + 0.05);
+  }
+
+  function hum(dur, g) {
+    if (!AC) return;
+    var t0 = AC.currentTime;
+    [52, 84].forEach(function (f, i) {
+      var o = AC.createOscillator();
+      var gn = AC.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      gn.gain.setValueAtTime(0.0001, t0);
+      gn.gain.linearRampToValueAtTime(g * (i ? 0.6 : 1), t0 + 0.25);
+      gn.gain.setValueAtTime(g * (i ? 0.6 : 1), t0 + dur - 0.4);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(gn);
+      gn.connect(master);
+      o.start(t0);
+      o.stop(t0 + dur + 0.05);
+    });
+  }
+
+  // --- 具体音效 ---
+  function sfxBoot() { tone(150, 55, 0.55, 'sine', 0.05); hiss(0.45, 'highpass', 1300, 0.7, 0.028, 0.02); }
+  function sfxScreenOn() { tone(620, 900, 0.06, 'square', 0.010); hum(1.4, 0.012); }
+  function cueRing() {
+    [0, 0.135, 0.27].forEach(function (o, i) {
+      tone(i % 2 ? 940 : 720, i % 2 ? 900 : 690, 0.09, 'square', 0.017, o);
+    });
+  }
+  function cueAnswer() { tone(560, 480, 0.07, 'square', 0.012); }
+  function cueBed() { hiss(6.8, 'bandpass', 540, 0.8, 0.020); hum(6.8, 0.010); }
+  function cueStat() { hiss(0.13, 'bandpass', 2100, 2.6, 0.018); tone(320, 300, 0.05, 'square', 0.006); }
+  function cueHang() { tone(430, 170, 0.26, 'sine', 0.026); }
+  function cueTap() { tone(760, 660, 0.05, 'square', 0.008); }
+  function cueTitle() {
+    tone(96, 54, 0.7, 'sine', 0.055);
+    hiss(0.5, 'highpass', 1100, 0.8, 0.022);
+    hum(2.8, 0.04);
+    cueTimers.push(setTimeout(function () { if (AC) cueStat(); }, 520));
+  }
+  function sfxOff() { tone(520, 260, 0.12, 'square', 0.012); hiss(0.2, 'lowpass', 400, 1, 0.02); }
+  function thump(g) { tone(66, 36, 0.34, 'sine', g); hiss(0.2, 'lowpass', 320, 1, g * 0.4, 0); }
+  function scrape() { hiss(0.75, 'bandpass', 3400, 5, 0.028); tone(2300, 780, 0.4, 'sawtooth', 0.006); }
+  function breath() { hiss(0.9, 'bandpass', 430, 1.5, 0.026); hiss(0.5, 'bandpass', 240, 2, 0.018, 0.3); }
+  function riser(dur) { tone(150, 620, dur, 'sawtooth', 0.012); hiss(dur, 'bandpass', 900, 0.5, 0.020); }
+  function strikeHit() {
+    hiss(0.5, 'lowpass', 1400, 0.7, 0.075);
+    tone(180, 42, 0.5, 'sine', 0.05);
+    hiss(0.35, 'bandpass', 2800, 3, 0.03);
+    thump(0.03);
+  }
+  function sfxDead() {
+    tone(60, 40, 0.9, 'sine', 0.05);
+    tone(6600, 6200, 4.2, 'sine', 0.016);
+    hiss(1.2, 'highpass', 3000, 0.7, 0.008);
+  }
+
+  /* ---------------- 阶段调度 ---------------- */
+  function after(ms, fn) { cueTimers.push(setTimeout(fn, ms)); }
+  function clearCues() {
+    cueTimers.forEach(function (id) { clearTimeout(id); });
+    cueTimers = [];
+  }
+  function stopRing() {
+    if (ringTimer) { clearInterval(ringTimer); ringTimer = 0; }
+  }
+  function startRing() {
+    stopRing();
+    cueRing();
+    ringTimer = setInterval(cueRing, 1550);
+  }
+
+  function scheduleStage(ms) {
+    clearCues();
+    if (/(?:^#|&)(k|d|f)=/.test(location.hash)) return;   // 预览模式不放声音，方便逐帧截图
+    stopRing();
+
+    if (stage === 'ring') {
+      startRing();
+    } else if (stage === 'call') {
+      after(0, cueAnswer);
+      after(140, function () { hum(3.2, 0.012); });
+      after(700, function () { tone(320, 236, 1.0, 'sine', 0.028); });   // 一声定调的钟
+      after(1720, function () { hiss(0.10, 'bandpass', 2400, 2.2, 0.012); });
+      after(3020, function () { hiss(0.10, 'bandpass', 2400, 2.2, 0.012); });
+      after(4320, function () { hiss(0.10, 'bandpass', 2400, 2.2, 0.012); });
+      after(5220, function () { thump(0.05); tone(180, 120, 0.30, 'sine', 0.028); });  // 落印
+      after(APPT_END, cueHang);
+      after(APPT_END + 120, sfxOff);
+    } else if (stage === 'kill') {
+      after(0, cueHang);
+      after(120, sfxOff);
+      after(160, function () { hiss(1.6, 'lowpass', 280, 0.8, 0.020); });   // 房间里那点底噪
+      after(700, function () { tone(300, 330, 0.05, 'square', 0.004); });   // 灯丝亮
+      [1500, 2800, 4100].forEach(function (t) { after(t, function () { tone(240, 260, 0.04, 'square', 0.003); }); });
+      after(2600, scrape);
+      [3200, 4500, 5700, 6700, 7600, 8400].forEach(function (t, i) {
+        after(t, function () { thump(0.045 + i * 0.009); });
+      });
+      after(5200, breath); after(6900, breath); after(8200, breath);
+      after(8700, function () { riser(1000); });
+      after(K.strike - 50, strikeHit);
+      [K.strike + 400, K.strike + 900].forEach(function (t, i) { after(t, function () { thump(0.03 - i * 0.01); }); });
+      [10400, 11200, 11900].forEach(function (t) { after(t, function () { thump(0.022); }); });
+      after(12500, function () { tone(7200, 7000, 3.2, 'sine', 0.012); });   // 耳鸣
+      after(15200, function () { tone(1300, 1000, 0.6, 'sine', 0.006); });
+    } else if (stage === 'pc') {
+      after(1050, function () { tone(300, 170, 0.05, 'square', 0.007); hiss(0.10, 'lowpass', 420, 1, 0.016); });   // 按开机键
+      after(1250, function () { hum(7.0, 0.011); hiss(4.0, 'lowpass', 300, 0.8, 0.014); });                    // 风扇起来
+      after(1600, function () { tone(120, 320, 0.55, 'sine', 0.012); });                                       // 显像管嗡
+      after(2450, function () { tone(1050, 1040, 0.10, 'square', 0.010); });                                   // 自检滴一声
+      [3100, 4100, 4900, 5700].forEach(function (t) { after(t, function () { hiss(0.16, 'bandpass', 1700, 3.2, 0.010); }); });  // 硬盘
+      after(6600, function () { tone(680, 900, 0.14, 'sine', 0.014); });                                       // 进系统
+    } else if (stage === 'dead') {
+      after(60, sfxDead);
+    }
+  }
+
+  function setStage(s, ms) {
+    stage = s;
+    segT0 = performance.now() - (ms || 0);
+    hotspots.length = 0;
+    tipEl.classList.remove('on');
+    scheduleStage(ms);
+  }
+
+  /* ---------------- 交互 ---------------- */
+  function choose(id) {
+    if (stage !== 'ring') return;
+    stopRing();
+    if (id === 'answer') setStage('call');
+    else setStage('kill');
+  }
+
+  function restart() {
+    pcOn = false; pcHint = 0; pclOpen = false; pclRun = false; pclDone = false;
+    qqReset();
+    if (!AC) audioInit();
+    if (AC && AC.state === 'suspended') AC.resume();
+    setStage('ring');
+  }
+
+  function hitAction(id) {
+    if (id === 'back') { setStage('home'); cueTap(); return; }
+    if (id.indexOf('app:') === 0) {
+      appOpen = id.slice(4);
+      setStage('app');
+      cueTap();
+      return;
+    }
+    if (id.indexOf('qq:') === 0) { qqAction(id.slice(3)); return; }
+    if (id.indexOf('bw:') === 0) { bwAction(id.slice(3)); return; }
+    if (id.indexOf('wx:') === 0) { wxAction(id.slice(3)); return; }
+    if (id === 'off:power') { pcHint = performance.now(); sfxOff(); return; }   // 强开机：按了没用
+    if (id === 'off:pc') { pcOn = true; setStage('pc'); return; }                // 玩电脑：开机 CG
+    if (id === 'off:pcoff') { shutFade = performance.now(); setStage('app'); return; }
+    if (id === 'pcl:open') { pclOpen = true; pclRun = false; pclDone = false; cueTap(); return; }
+    if (id === 'pcl:close') { pclOpen = false; cueTap(); return; }
+    if (id === 'pcl:start') {
+      pclRun = true; pclDone = false; pclT0 = performance.now();
+      tone(560, 760, 0.10, 'square', 0.010);
+      hiss(0.30, 'bandpass', 900, 1.2, 0.014);
+      cueTimers.push(setTimeout(function () { if (AC) hiss(0.9, 'lowpass', 320, 0.9, 0.012); }, 1200));
+      return;
+    }
+  }
+
+  /* ---------------- 主循环 ---------------- */
+  function frame(now) {
+    var el = FRZ >= 0 ? FRZ : (now - segT0);
+    lastEl = el;
+    hotspots.length = 0;
+
+    if (FRZ < 0 && stage === 'kill' && el > K.end) { setStage('dead'); el = 0; }
+    if (FRZ < 0 && stage === 'call' && el > APPT_HOME) { setStage('home'); el = 0; }
+    if (stage === 'gate') drawRing(el, true);
+    else if (stage === 'ring') drawRing(el, false);
+    else if (stage === 'call') drawAppoint(el);
+    else if (stage === 'home') drawHome(el);
+    else if (stage === 'app') {
+      alarmTick();
+      if (appOpen === 'qq') drawQQ(el); else if (appOpen === 'browser') drawBrowser(el); else if (appOpen === 'wechat') drawWechat(el); else drawAppView(el);
+      alarmOverlay();
+    }
+    else if (stage === 'pc') { if (FRZ < 0 && el > PC_LEN) { setStage('pcd'); el = 0; } drawPC(el); }
+    else if (stage === 'pcd') drawPCD(el);
+    else if (stage === 'kill') drawKill(el);
+    else if (stage === 'dead') drawDead(el);
+
+    grain(el);
+    if (stage !== 'kill') vignette(0.58);
+
+    window.__cg = stage + ':' + Math.round(el);
+    window.__hot = hotspots;
+    window.__st = function () { return stage; };
+
+    // 结束提示
+    var tipAt = (stage === 'dead' && el > 1200);
+    tipEl.classList.toggle('on', !!tipAt);
+
+    raf = requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    cv.style.width = W + 'px';
+    cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    seedDust();
+    if (lastEl > 0) { /* 下一帧会重绘 */ }
+  }
+
+  /* ---------------- 启动 ---------------- */
+  var t0 = 0, raf = 0;
+  var tipEl = document.getElementById('tip');
+  var gate = document.getElementById('igate');
+
+  document.getElementById('iplay').addEventListener('click', function (e) {
+    e.stopPropagation();
+    audioInit();
+    if (AC && AC.state === 'suspended') AC.resume();
+    gate.classList.add('hide');
+    setStage('ring');
+  });
+
+  cv.addEventListener('pointerdown', function (e) {
+    var x = e.clientX, y = e.clientY;
+    // 浏览器缩放画布时, 把屏幕坐标换算回画布坐标
+    var cr = cv.getBoundingClientRect();
+    if (cr.width > 0 && cr.height > 0) {
+      x = (e.clientX - cr.left) * (W / cr.width);
+      y = (e.clientY - cr.top) * (H / cr.height);
+    }
+
+    if (stage === 'ring') {
+      for (var i = 0; i < hotspots.length; i++) {
+        var h = hotspots[i];
+        var dx = x - h.x, dy = y - h.y;
+        if (dx * dx + dy * dy <= h.r * h.r) { choose(h.id); return; }
+      }
+      return;
+    }
+    // 聊天区：先按住，松手时才算点击（中间可以拖动翻看）
+    if (stage === 'app' && appOpen === 'qq' && qqState === 'main'
+      && (qqView === 'chat' || qqView === 'pchat')) {
+      chatDrag = { y: y, s: qqScroll, moved: 0 };
+      return;
+    }
+    if (stage === 'home' || stage === 'app' || stage === 'pcd') {
+      for (var j = 0; j < hotspots.length; j++) {
+        var hj = hotspots[j];
+        var ddx = x - hj.x, ddy = y - hj.y;
+        if (hj.hw ? (Math.abs(ddx) <= hj.hw && Math.abs(ddy) <= hj.hh)
+                         : (ddx * ddx + ddy * ddy <= hj.r * hj.r)) { hitAction(hj.id); return; }
+      }
+      return;
+    }
+    if (stage === 'dead' && elNow() > 1200) {
+      restart();
+    }
+  });
+
+  // 拖动翻看（手机/鼠标按住都行）
+  cv.addEventListener('pointermove', function (e) {
+    if (!chatDrag) return;
+    var cr2 = cv.getBoundingClientRect();
+    var cy2 = (cr2.height > 0) ? (e.clientY - cr2.top) * (H / cr2.height) : e.clientY;
+    var dy = cy2 - chatDrag.y;
+    if (Math.abs(dy) > chatDrag.moved) chatDrag.moved = Math.abs(dy);
+    if (chatDrag.moved > 4) {
+      qqScroll = Math.max(0, Math.min(qqScrollMax, chatDrag.s + dy));
+      if (e.cancelable) e.preventDefault();
+    }
+  });
+
+  // 松手：没拖动才当成点了某个热点
+  cv.addEventListener('pointerup', function (e) {
+    if (!chatDrag) return;
+    var d = chatDrag;
+    chatDrag = null;
+    if (d.moved >= 10) return;
+    var x = e.clientX, y = e.clientY;
+    for (var i = 0; i < hotspots.length; i++) {
+      var h = hotspots[i];
+      var dx = x - h.x, dy = y - h.y;
+      if (dx * dx + dy * dy <= h.r * h.r) { hitAction(h.id); return; }
+    }
+  });
+
+  cv.addEventListener('pointercancel', function () { chatDrag = null; });
+
+  // 浏览器那个隐形输入框：手机点一下会弹自己的输入法，中文也能打
+  (function () {
+    bwInput = document.createElement('input');
+    bwInput.type = 'text';
+    bwInput.setAttribute('autocomplete', 'off');
+    bwInput.setAttribute('autocapitalize', 'off');
+    bwInput.setAttribute('spellcheck', 'false');
+    bwInput.setAttribute('aria-label', '搜索');
+    bwInput.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
+      + 'border:0;padding:0;margin:0;background:transparent;color:transparent;z-index:-1;';
+    document.body.appendChild(bwInput);
+
+    bwInput.addEventListener('input', function () {
+      bwTyped = bwInput.value;
+    });
+    bwInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        bwSearch(bwInput.value);
+        bwInput.blur();
+      }
+    });
+    // 离开别的页面就收起来，免得挡住点击
+    document.addEventListener('click', function () {
+      if (stage !== 'app' || appOpen !== 'browser') { try { bwInput.blur(); } catch (e) { } }
+    });
+  })();
+
+  // 滚轮 / 触控板
+  cv.addEventListener('wheel', function (e) {
+    if (stage !== 'app' || appOpen !== 'qq' || qqState !== 'main') return;
+    if (qqView !== 'chat' && qqView !== 'pchat') return;
+    qqScroll = Math.max(0, Math.min(qqScrollMax, qqScroll - e.deltaY * 0.55));
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('keydown', function (e) {
+    // 浏览器：没接输入法就自己记字（字母/数字/符号都行），接了就让输入法管
+    if (stage === 'app' && appOpen === 'browser') {
+      if (document.activeElement === bwInput) return;
+      if (e.key === 'Enter') { if (bwTyped) bwSearch(bwTyped); e.preventDefault(); return; }
+      if (e.key === 'Backspace') { bwTyped = bwTyped.slice(0, -1); e.preventDefault(); return; }
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        bwTyped += e.key;
+        e.preventDefault();
+      }
+      return;
+    }
+    if (stage !== 'app' || appOpen !== 'qq' || qqState !== 'login') return;
+    if (e.key.length === 1 && e.key >= '0' && e.key <= '9') {
+      if (qqPass.length < 8) qqPass += e.key;
+    } else if (e.key === 'Backspace') {
+      qqPass = qqPass.slice(0, -1);
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      qqSubmit();
+    }
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    if (AC && AC.state === 'suspended') { try { AC.resume(); } catch (e) { } }
+  });
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 260); });
+
+  resize();
+  segT0 = performance.now();
+
+  // 深链：#k=6000 直接看暗杀段的第 6 秒
+  (function boot() {
+    var m = /(?:^#|&)k=(\d+)/.exec(location.hash);
+    if (m) {
+      gate.style.display = 'none';
+      setStage('kill', +m[1]);
+    }
+    var m2 = /(?:^#|&)d=(\d+)/.exec(location.hash);
+    if (m2) {
+      gate.style.display = 'none';
+      setStage('dead', +m2[1]);
+    }
+    var m3 = /(?:^#|&)c=(\d+)/.exec(location.hash);
+    if (m3) {
+      gate.style.display = 'none';
+      setStage('call', +m3[1]);
+    }
+    var m4 = /(?:^#|&)h=(\d+)/.exec(location.hash);
+    if (m4) {
+      gate.style.display = 'none';
+      setStage('home', +m4[1]);
+    }
+    var mf = /(?:^#|&)f=([a-z]+):(\d+)/.exec(location.hash);
+    if (mf) {
+      gate.style.display = 'none';
+      setStage(mf[1], 0);
+      FRZ = +mf[2];
+    }
+    var mq = /(?:^#|&)q=(login|main|notice|contact|chat|pchat)/.exec(location.hash);
+    var mpc = /(?:^#|&)p=(\d+)/.exec(location.hash);
+    if (mq) {
+      if (mq[1] === 'login') { qqState = 'login'; }
+      else if (mq[1] === 'notice') { qqState = 'main'; qqTab = 'notice'; qqJoined = false; }
+      else if (mq[1] === 'contact') { qqState = 'main'; qqTab = 'contact'; qqJoined = true; }
+      else if (mq[1] === 'chat') { qqState = 'main'; qqTab = 'msg'; qqJoined = true; qqView = 'chat'; }
+      else if (mq[1] === 'pchat') { qqState = 'main'; qqTab = 'contact'; qqJoined = true; qqView = 'pchat'; }
+      else { qqState = 'main'; qqTab = 'msg'; qqJoined = true; }
+
+      var mcq = /(?:^#|&)cq=(\d+)/.exec(location.hash);
+      if (mcq) qqForce = Math.floor(+mcq[1] / QQ_STEP);
+      else if (mq[1] === 'chat') qqForce = QQ_CHAT.length;
+
+      // s=1：预览"已经回过话"的样子（s=2 看另一条分支）
+      if (/(?:^#|&)s=[12]/.test(location.hash)) {
+        var sd = /(?:^#|&)s=2/.test(location.hash) ? 'fine' : 'look';
+        var rpv = QQ_REPLY[sd];
+        qqSent = true;
+        qqSentAt = -99999999;
+        qqMine = [{ m: 6, own: true, n: 'Gun7z', t: rpv.txt, at: 0, tm: '04:02' }].concat(rpv.after.map(function (a) {
+          return { m: a.m, t: a.t, at: 0, tm: a.tm };
+        }));
+      }
+    }
+    if (mpc) { qqPc = +mpc[1]; qqState = 'main'; qqTab = 'contact'; qqJoined = true; qqView = 'pchat'; }
+    // re=N：预览"看到第 N 条就退出、再点进来接着看"的样子
+    var mre = /(?:^#|&)re=(\d+)/.exec(location.hash);
+    if (mre) {
+      qqState = 'main'; qqJoined = true; qqView = 'chat';
+      qqChatDone = false; qqChatShown = +mre[1];
+      qqChatT0 = -(qqChatShown - 1) * QQ_STEP;
+    }
+    var m5 = /(?:^#|&)a=([a-z]+)/.exec(location.hash);
+    // 预览：pcf=毫秒 直接看电脑开机 CG；off=1 直接看手机关机后那两个选项
+    var mpcl = /(?:^#|&)pcl=([a-z0-9]+)/.exec(location.hash);
+    if (mpcl) {
+      gate.style.display = 'none';
+      setStage('pcd');
+      pclOpen = true;
+      if (mpcl[1] === 'run') { pclRun = true; pclT0 = performance.now() - 2600; }
+    }
+    var mpcf = /(?:^#|&)pcf=(\d+)/.exec(location.hash);
+    if (mpcf) {
+      gate.style.display = 'none';
+      setStage('pc', +mpcf[1]);
+    }
+    var moff = /(?:^#|&)off=1/.test(location.hash);
+    if (moff) {
+      gate.style.display = 'none';
+      appOpen = 'wechat';
+      setStage('app', 2400);
+      shutFade = 1;
+      PH_CLOCK = '05:00';
+    }
+    if (m5) {
+      gate.style.display = 'none';
+      appOpen = m5[1];
+      setStage('app', 2400);
+      // bq=魔法阵：直接看搜过之后的样子；bw=词条：直接开词条页（预览用）
+      var mbq = /(?:^#|&)bq=([^&]+)/.exec(location.hash);
+      if (mbq) bwSearch(decodeURIComponent(mbq[1]));
+      var mbw = /(?:^#|&)bw=([^&]+)/.exec(location.hash);
+      if (mbw) bwOpen(decodeURIComponent(mbw[1]));
+
+      // 微信预览：wxs=login|verify|main|me|svc|money，wxb=1 让验证码条挂着
+      var mwx = /(?:^#|&)wxs=([a-z]+)/.exec(location.hash);
+      if (mwx) {
+        var st = mwx[1];
+        if (st === 'verify') {
+          wxPW = WX_PW; wxPhone = WX_PHONE;
+          wxSent = true; wxCoded = true; wxSentAt = performance.now() - 9000;
+          wxField = 'code'; wxCode = ''; wxState = 'verify';
+        } else if (st === 'info' || st === 'discover' || st === 'moments' || st === 'me' || st === 'svc' || st === 'money' || st === 'main') {
+          wxState = st;
+          wxTabI = (st === 'main') ? 0 : (st === 'info' ? 1 : (st === 'discover' ? 2 : 3));
+          if (st === 'moments') { phAdvance('05:00'); alarmAt = performance.now() + 15000; }
+        }
+        var msc = /(?:^#|&)wsc=(\d)/.exec(location.hash);
+        if (msc) {
+          cgIdx = +msc[1];
+          wxState = 'cg';
+          var mst = /(?:^#|&)wst=([\d.]+)/.exec(location.hash);
+          cgT0 = performance.now() - (mst ? (+mst[1]) * 1000 : 0);
+          cgCue = [0, 0, 0];
+        }
+        var mxb = /(?:^#|&)wxb=1/.exec(location.hash);
+        if (mxb) { wxCoded = true; wxBannerOn = true; wxBannerAt = performance.now() - 120; }
+      }
+      var msc2 = /(?:^#|&)wsc=(\d)/.exec(location.hash);
+      if (msc2 && !mwx) {
+        cgIdx = +msc2[1];
+        wxState = 'cg';
+        var mst2 = /(?:^#|&)wst=([\d.]+)/.exec(location.hash);
+        cgT0 = performance.now() - (mst2 ? (+mst2[1]) * 1000 : 0);
+        cgCue = [0, 0, 0];
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>
