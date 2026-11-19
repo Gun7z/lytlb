@@ -143,6 +143,7 @@ header { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.05); posit
 .row-you { font-size: 11px; color: var(--primary); background: var(--primary-light); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
 .empty-row { text-align: center; color: var(--text-muted); }
 .table-tip { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); }
+.office-frame { width: 100%; border: 0; display: block; min-height: 720px; border-radius: 12px; background: #efe4cd; }
 @media (max-width: 560px) { .stat-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* 服主管理台 */
@@ -344,295 +345,13 @@ footer { background: var(--white); border-top: 1px solid var(--border); padding:
   </div>
 
   <!-- ===== 视图：官员（完整树状） ===== -->
+  <!-- ===== 视图：官员（职位表，名单存云端 offices 表，只有服主可改） ===== -->
   <div class="page-block" data-id="officials">
     <div class="section">
-      <h2>联邦官员架构（完整树状 · 全员 ID 绑定）</h2>
-      <p>政体层级：元首 → 首相 → 上议会八大职能部门 / 下议会</p>
-
-      <div class="tree-root">
-        <!-- 1. 元首 -->
-        <div class="tree-node">
-          <div class="tree-head tree-expand">
-            <span class="tree-toggle-icon">+</span>
-            <span>🏛️ 联邦元首（最高统辖）</span>
-          </div>
-          <div class="tree-children tree-line">
-            <div class="staff-card">
-              <div class="staff-avatar-square">元</div>
-              <div class="staff-info">
-                <p><strong>职位：联邦元首</strong></p>
-                <p>账号 ID：<span class="staff-id">Gun7z</span></p>
-                <p>职能：联邦最高权力持有者，统筹全部议会、部门、领土、军事、建设、行政、宗教全部事务，拥有最终裁定权。</p>
-              </div>
-            </div>
-
-            <!-- 2. 首相 -->
-            <div class="tree-node" style="margin-top:12px;">
-              <div class="tree-head tree-expand">
-                <span class="tree-toggle-icon">+</span>
-                <span>👔 联邦首相（全权执政）</span>
-              </div>
-              <div class="tree-children tree-line">
-                <div class="staff-card">
-                  <div class="staff-avatar-square">首</div>
-                  <div class="staff-info">
-                    <p><strong>职位：联邦首相</strong></p>
-                    <p>账号 ID：<span class="staff-id">Altria_VAI</span></p>
-                    <p>职能：承接元首指令，统筹上议会八大部门、下议会全部日常执政、事务调度、政策落地、人事统筹。</p>
-                  </div>
-                </div>
-
-                <!-- 上议会 -->
-                <div class="tree-node" style="margin-top:12px;">
-                  <div class="tree-head tree-expand">
-                    <span class="tree-toggle-icon">+</span>
-                    <span>📜 上议会（八大职能部门）</span>
-                  </div>
-                  <div class="tree-children tree-line">
-
-                    <!-- 部门 1：建筑议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>🏗️ 建筑议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">地</div>
-                          <div class="staff-info">
-                            <p><strong>职位：地表建设部部长</strong></p>
-                            <p>账号 ID：<span class="staff-id">NorGestrel</span></p>
-                            <p>职能：联邦地表城镇、道路、市政、景观、公共建筑规划与施工管理。</p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">下</div>
-                          <div class="staff-info">
-                            <p><strong>职位：地下建设部部长</strong></p>
-                            <p>账号 ID：<span class="staff-id">konglong</span></p>
-                            <p>职能：地下通道、地下仓库、地下工程、隐蔽设施建设与维护。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 2：财政议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>💰 财政议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">财</div>
-                          <div class="staff-info">
-                            <p><strong>职位：财政议会总长</strong></p>
-                            <p>账号 ID：<span class="staff-id">Rootbean</span></p>
-                            <p>职能：统筹联邦经济、物资收支、资产统计、经费分配、全局资源管控。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 3：农业议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>🌾 农业议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">农</div>
-                          <div class="staff-info">
-                            <p><strong>职位：农业议会议长</strong></p>
-                            <p>账号 ID：<span class="staff-id">dashui99</span></p>
-                            <p>职能：联邦全部粮食、畜牧、作物、林业生态资源保障、农田规划与产出管理。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 4：国防议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>🛡️ 国防议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">防</div>
-                          <div class="staff-info">
-                            <p><strong>职位：国防议会总长</strong></p>
-                            <p>账号 ID：<span class="staff-id">YIngtu2026</span></p>
-                            <p>职能：领土安防、边境巡逻、防务建设、秩序维护、应急处置、领土安全保障。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 5：后勤议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>📦 后勤议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">后</div>
-                          <div class="staff-info">
-                            <p><strong>职位：后勤议会总长</strong></p>
-                            <p>账号 ID：<span class="staff-id">Mo_Cha_OVO</span></p>
-                            <p>职能：物资运输、仓储管理、资源调配、民生保障、基建耗材全局补给。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 6：行政议会 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>🏛️ 行政议会</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">邦</div>
-                          <div class="staff-info">
-                            <p><strong>职位：联邦邦长</strong></p>
-                            <p>账号 ID：<span class="staff-id">Mian_Ba0</span></p>
-                            <p>职能：管辖联邦整体行政秩序、跨区域事务统筹、镇区总管。</p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：繁华领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">SUNO98『繁华领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：鱼桌领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">dashui99『鱼桌领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：埃卢夫加德·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">ecyseikai『埃卢夫加德』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：布达拉宫领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">sakura_xxh『布达拉宫领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：莱博塔利亚领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">SSDJJR『莱博塔利亚领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：普瑞斯玛领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">xieyufive『普瑞斯玛领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：赫利安索领主·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">Fish7_777777『赫利安索领主』</span></p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">镇</div>
-                          <div class="staff-info">
-                            <p><strong>职位：无敌章鱼堡·镇长</strong></p>
-                            <p>账号 ID：<span class="staff-id">yubelain『无敌章鱼堡领主』</span></p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 7：宫殿部 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>👑 宫殿部（皇室职能）</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">公</div>
-                          <div class="staff-info">
-                            <p><strong>职位：长公主</strong></p>
-                            <p>账号 ID：<span class="staff-id">Akar1_17『长公主』</span></p>
-                            <p>职能：联邦皇室礼仪、宫殿内务、皇室形象统筹、高阶外交陪同。</p>
-                          </div>
-                        </div>
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">公</div>
-                          <div class="staff-info">
-                            <p><strong>职位：公主</strong></p>
-                            <p>账号 ID：<span class="staff-id">kila_yu『公主』</span></p>
-                            <p>职能：协助长公主管理宫殿事务、文化礼仪、皇室活动主持。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 部门 8：宣传部 -->
-                    <div class="tree-node">
-                      <div class="tree-head tree-expand">
-                        <span class="tree-toggle-icon">+</span>
-                        <span>📢 宣传部（联邦宣发）</span>
-                      </div>
-                      <div class="tree-children tree-line">
-                        <div class="staff-card">
-                          <div class="staff-avatar-square">宣</div>
-                          <div class="staff-info">
-                            <p><strong>职位：宣传部总长</strong></p>
-                            <p>账号 ID：<span class="staff-id">wodeSJQD</span></p>
-                            <p>职能：联邦对外宣传、公告排版、文化输出、社群运营、形象包装、新闻发布。</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                <!-- 下议会 -->
-                <div class="tree-node" style="margin-top:12px;">
-                  <div class="tree-head tree-expand">
-                    <span class="tree-toggle-icon">+</span>
-                    <span>📋 下议会（民生监察）</span>
-                  </div>
-                  <div class="tree-children tree-line">
-                    <div class="staff-card">
-                      <div class="staff-avatar-square">监</div>
-                      <div class="staff-info">
-                        <p><strong>下议会职能</strong></p>
-                        <p>负责居民民生服务、秩序监督、建议收集、纠纷调解、文明建设、社群管理、民意汇总。</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
+      <h2>联邦官员职位表</h2>
+      <p>层级：元首 — 宗教领袖 — 上仪会（首相）— 五部 — 下仪会（领主）— 皇室成员 — 选民。名单由服主维护，改动保存到云端，所有设备看到的是同一份。</p>
+      <iframe class="office-frame" id="officeFrame" src="officials.html" title="洛亚提自由联邦官员职位表"></iframe>
+      <p class="table-tip">加载不出来时可以<a href="officials.html" target="_blank" rel="noopener">在新标签页打开职位表</a>；服主也可以在线导出 4K 长图或名单 JSON。</p>
     </div>
   </div>
 
@@ -1703,6 +1422,7 @@ function route(scrollTop) {
   renderPage(id);
   if (localStorage.getItem('lyt_logged')) { touchAccount(localStorage.getItem('lyt_user')); }
   if (id === 'users') { renderUsers(); }
+  if (id === 'officials') { startOfficeFit(); }
   if (id === 'post') { refreshNav(); }
   if (id === 'admin') { renderAdminAccounts(); renderGrants(); renderAdminPosts(); }
   if (scrollTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -1721,6 +1441,33 @@ navLinks.forEach(function (link) {
       location.hash = target;
     }
   });
+});
+
+/* 职位表嵌页：同源，父页面直接量内页高度，撑开 iframe，避免双层滚动条 */
+function fitOfficeFrame() {
+  var f = document.getElementById('officeFrame');
+  if (!f) { return; }
+  try {
+    var d = f.contentDocument;
+    if (!d || !d.documentElement) { return; }
+    var h = Math.max(d.documentElement.scrollHeight, d.body ? d.body.scrollHeight : 0);
+    if (!h || h < 400) { return; }
+    var target = Math.min(12000, h + 4);
+    if (Math.abs(target - parseInt(f.style.height || '0', 10)) > 4) {
+      f.style.height = target + 'px';
+    }
+  } catch (e) {}
+}
+function startOfficeFit() {
+  fitOfficeFrame();
+  setTimeout(fitOfficeFrame, 800);
+  setTimeout(fitOfficeFrame, 2000);
+  if (!window.__officeFitTimer) {
+    window.__officeFitTimer = setInterval(fitOfficeFrame, 2000);
+  }
+}
+window.addEventListener('message', function (e) {
+  if (e.data && e.data.t === 'lyt-office-height') { setTimeout(fitOfficeFrame, 120); }
 });
 
 /* 联系页占位图标不跳转 */
